@@ -31,7 +31,16 @@ PROJECT: TeamBoard — work management platform (Bordio-style). Teams plan work 
 - Phase 0 (scaffold) complete.
 - Phase 1 (full Prisma schema + rich seed) complete. All domain entities modeled with indexes. Seed: 3 users, 1 workspace, 2 projects, 8 statuses, 25 tasks (7 on waiting list), 3 events, 3 notes.
 - Demo login: `alice@teamboard.local` / `password123` (also bob@, carol@).
-- Phase 2 (auth module + workspaces/projects) next.
+- Phase 2 complete:
+  - Auth: signup (creates personal workspace), signin, refresh (rotating httpOnly cookie, hashed+revocable in DB), logout, Google OAuth (graceful 503 if unconfigured). argon2, JWT access 15m. Real `JwtAuthGuard` (global) + `@Public()` + `@CurrentUser()`. Signin throttled 5/min. `/users/me` GET+PATCH. 9 e2e tests green.
+  - Workspaces/folders/projects/members/invites. Access enforced in services via `AccessService` (`assertWorkspaceMember`, `assertProjectAccess`). Guest isolation verified (guest sees only invited projects, 403 elsewhere). Default statuses seeded on project create. Invites email via Mailpit (`MailService`).
+  - Frontend: signin/signup wired, silent-refresh session bootstrap (`useSession`/`RequireAuth`), sidebar (workspace switcher + folders + projects + new-project modal), project page.
+- Phase 3 (task CRUD + waiting list + custom statuses) next.
+
+## CONVENTIONS (added in Phase 2)
+- Request validation: zod schemas from `@teamboard/shared` via `@ZodBody(schema)` decorator (`src/common/pipes/zod-body.decorator.ts`). Not class-validator.
+- `packages/shared` builds with **tsup** (dual ESM+CJS). Required: CJS `export *` hides named runtime exports from Vite/rollup. After editing shared, `pnpm --filter @teamboard/shared build` (or run its `dev` watch).
+- Invite tokens: random base64url, stored as deterministic `sha256` hash for lookup (`src/common/hash.ts`). Refresh tokens use argon2 (looked up by jti).
 
 ## GOTCHAS
 - Prisma CLI reads `.env` from cwd. `apps/api/.env` is a symlink → root `.env`. Keep it.
