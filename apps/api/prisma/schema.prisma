@@ -1,0 +1,430 @@
+// TeamBoard Prisma schema — full domain model (Phase 1).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum ProjectRole {
+  MANAGER
+  MEMBER
+  GUEST
+}
+
+enum RecurrenceFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum RsvpStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+// ─── Users ───────────────────────────────────────────────
+
+model User {
+  id                 String   @id @default(cuid())
+  email              String   @unique
+  passwordHash       String? // nullable for OAuth-only accounts
+  name               String
+  avatarUrl          String?
+  timezone           String   @default("UTC")
+  googleId           String?  @unique
+  googleRefreshToken String? // encrypted at rest (AES-256-GCM)
+  createdAt          DateTime @default(now())
+
+  ownedWorkspaces  Workspace[]        @relation("WorkspaceOwner")
+  workspaceMembers WorkspaceMember[]
+  projectMembers   ProjectMember[]
+  assignedTasks    Task[]             @relation("TaskAssignee")
+  createdTasks     Task[]             @relation("TaskCreatedBy")
+  createdEvents    Event[]            @relation("EventCreatedBy")
+  eventParticipant EventParticipant[]
+  timeEntries      TimeEntry[]
+  chatMessages     ChatMessage[]
+  messageReads     MessageRead[]
+  attachments      Attachment[]
+  createdNotes     Note[]
+  notifications    Notification[]
+  refreshTokens    RefreshToken[]
+  capacities       MemberCapacity[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String // hashed so we can revoke
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// ─── Workspaces ──────────────────────────────────────────
+
+model Workspace {
+  id      String  @id @default(cuid())
+  name    String
+  logoUrl String?
+  ownerId String
+
+  owner   User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  members WorkspaceMember[]
+  folders Folder[]
+  projects Project[]
+  invites Invite[]
+
+  @@index([ownerId])
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String        @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole @default(MEMBER)
+  joinedAt    DateTime      @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+  @@map("workspace_members")
+}
+
+model Invite {
+  id          String       @id @default(cuid())
+  workspaceId String
+  projectId   String? // set for project-level GUEST invites
+  email       String
+  role        String // WorkspaceRole or ProjectRole as string
+  tokenHash   String       @unique
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime     @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project   Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([email])
+  @@map("invites")
+}
+
+// ─── Folders & Projects ──────────────────────────────────
+
+model Folder {
+  id          String  @id @default(cuid())
+  workspaceId String
+  name        String
+  position    Float   @default(0)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  projects  Project[]
+
+  @@index([workspaceId])
+  @@map("folders")
+}
+
+model Project {
+  id          String    @id @default(cuid())
+  workspaceId String
+  folderId    String?
+  name        String
+  color       String    @default("blue")
+  description String?
+  position    Float     @default(0)
+  archivedAt  DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  folder    Folder?         @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  members   ProjectMember[]
+  statuses  TaskStatus[]
+  tasks     Task[]
+  events    Event[]
+  notes     Note[]
+  invites   Invite[]
+
+  @@index([workspaceId])
+  @@index([folderId])
+  @@map("projects")
+}
+
+model ProjectMember {
+  id        String      @id @default(cuid())
+  projectId String
+  userId    String
+  role      ProjectRole @default(MEMBER)
+  createdAt DateTime    @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([userId])
+  @@map("project_members")
+}
+
+model MemberCapacity {
+  id              String @id @default(cuid())
+  workspaceId     String
+  userId          String
+  dailyMinutes    Int    @default(480)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@map("member_capacities")
+}
+
+// ─── Statuses ────────────────────────────────────────────
+
+model TaskStatus {
+  id          String  @id @default(cuid())
+  projectId   String
+  name        String
+  color       String
+  position    Float   @default(0)
+  isDefault   Boolean @default(false)
+  isCompleted Boolean @default(false)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  @@index([projectId])
+  @@map("task_statuses")
+}
+
+// ─── Tasks ───────────────────────────────────────────────
+
+model Task {
+  id                 String    @id @default(cuid())
+  projectId          String
+  title              String
+  description        Json? // TipTap rich-text JSON
+  statusId           String
+  assigneeId         String?
+  scheduledDate      DateTime? @db.Date // null = waiting list (backlog)
+  position           Float     @default(0)
+  timeEstimateMinutes Int?
+  completedAt        DateTime?
+  createdById        String
+  recurrenceId       String?
+  deletedAt          DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  project    Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  status     TaskStatus    @relation(fields: [statusId], references: [id])
+  assignee   User?         @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  createdBy  User          @relation("TaskCreatedBy", fields: [createdById], references: [id])
+  recurrence Recurrence?   @relation(fields: [recurrenceId], references: [id], onDelete: SetNull)
+  messages   ChatMessage[]
+  timeEntries TimeEntry[]
+  attachments Attachment[]
+
+  @@index([projectId, statusId, position])
+  @@index([assigneeId, scheduledDate])
+  @@index([recurrenceId])
+  @@map("tasks")
+}
+
+// ─── Events / Meetings ───────────────────────────────────
+
+model Event {
+  id                   String    @id @default(cuid())
+  projectId            String? // null = personal event
+  title                String
+  description          String?
+  startAt              DateTime
+  endAt                DateTime
+  allDay               Boolean   @default(false)
+  location             String?
+  color                String    @default("blue")
+  createdById          String
+  recurrenceId         String?
+  reminderMinutesBefore Int?
+  googleEventId        String?
+  icsUid               String    @unique @default(cuid())
+  deletedAt            DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  project      Project?           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy    User               @relation("EventCreatedBy", fields: [createdById], references: [id])
+  recurrence   Recurrence?        @relation(fields: [recurrenceId], references: [id], onDelete: SetNull)
+  participants EventParticipant[]
+  attachments  Attachment[]
+
+  @@index([projectId])
+  @@index([startAt])
+  @@index([recurrenceId])
+  @@map("events")
+}
+
+model EventParticipant {
+  id             String     @id @default(cuid())
+  eventId        String
+  userId         String? // null for external invitees
+  email          String? // for external invitees
+  responseStatus RsvpStatus @default(PENDING)
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@index([userId])
+  @@map("event_participants")
+}
+
+// ─── Recurrence ──────────────────────────────────────────
+
+model Recurrence {
+  id         String              @id @default(cuid())
+  frequency  RecurrenceFrequency
+  interval   Int                 @default(1)
+  byWeekdays Int[] // 0=Sun..6=Sat
+  until      DateTime?
+  count      Int?
+  createdAt  DateTime            @default(now())
+
+  tasks  Task[]
+  events Event[]
+
+  @@map("recurrences")
+}
+
+// ─── Time tracking ───────────────────────────────────────
+
+model TimeEntry {
+  id              String    @id @default(cuid())
+  taskId          String
+  userId          String
+  startedAt       DateTime
+  stoppedAt       DateTime? // null while running
+  durationSeconds Int? // computed on stop
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([userId])
+  @@map("time_entries")
+}
+
+// ─── Chat ────────────────────────────────────────────────
+
+model ChatMessage {
+  id        String    @id @default(cuid())
+  taskId    String
+  authorId  String
+  body      String
+  editedAt  DateTime?
+  createdAt DateTime  @default(now())
+
+  task        Task          @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author      User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  reads       MessageRead[]
+  attachments Attachment[]
+
+  @@index([taskId, createdAt])
+  @@map("chat_messages")
+}
+
+model MessageRead {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([userId])
+  @@map("message_reads")
+}
+
+// ─── Attachments ─────────────────────────────────────────
+
+model Attachment {
+  id         String   @id @default(cuid())
+  taskId     String?
+  eventId    String?
+  messageId  String?
+  uploaderId String
+  fileName   String
+  fileSize   Int
+  mimeType   String
+  s3Key      String
+  createdAt  DateTime @default(now())
+
+  task     Task?        @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  event    Event?       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  message  ChatMessage? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  uploader User         @relation(fields: [uploaderId], references: [id])
+
+  @@index([taskId])
+  @@index([eventId])
+  @@index([messageId])
+  @@map("attachments")
+}
+
+// ─── Notes ───────────────────────────────────────────────
+
+model Note {
+  id          String   @id @default(cuid())
+  projectId   String
+  title       String
+  content     Json? // TipTap rich-text JSON
+  position    Float    @default(0)
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation(fields: [createdById], references: [id])
+
+  @@index([projectId])
+  @@map("notes")
+}
+
+// ─── Notifications ───────────────────────────────────────
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String
+  payload   Json
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("notifications")
+}

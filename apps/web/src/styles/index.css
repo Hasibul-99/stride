@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Placeholder theme tokens. Full design system arrives in Phase 10. */
+:root {
+  --color-background: #f7f8fa;
+  --color-surface: #ffffff;
+  --color-border: #e5e7eb;
+  --color-foreground: #111827;
+  --color-muted: #6b7280;
+  --color-primary: #2563eb;
+  --color-primary-foreground: #ffffff;
+}
+
+.dark {
+  --color-background: #0f1115;
+  --color-surface: #181b20;
+  --color-border: #2a2e35;
+  --color-foreground: #f3f4f6;
+  --color-muted: #9ca3af;
+  --color-primary: #3b82f6;
+  --color-primary-foreground: #ffffff;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
