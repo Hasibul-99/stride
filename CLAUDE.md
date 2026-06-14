@@ -35,7 +35,17 @@ PROJECT: TeamBoard — work management platform (Bordio-style). Teams plan work 
   - Auth: signup (creates personal workspace), signin, refresh (rotating httpOnly cookie, hashed+revocable in DB), logout, Google OAuth (graceful 503 if unconfigured). argon2, JWT access 15m. Real `JwtAuthGuard` (global) + `@Public()` + `@CurrentUser()`. Signin throttled 5/min. `/users/me` GET+PATCH. 9 e2e tests green.
   - Workspaces/folders/projects/members/invites. Access enforced in services via `AccessService` (`assertWorkspaceMember`, `assertProjectAccess`). Guest isolation verified (guest sees only invited projects, 403 elsewhere). Default statuses seeded on project create. Invites email via Mailpit (`MailService`).
   - Frontend: signin/signup wired, silent-refresh session bootstrap (`useSession`/`RequireAuth`), sidebar (workspace switcher + folders + projects + new-project modal), project page.
-- Phase 3 (task CRUD + waiting list + custom statuses) next.
+- Phase 3 complete:
+  - Tasks: CRUD `/projects/:projectId/tasks`, waiting list (nullable `scheduledDate`), complete-snap (move to isCompleted status → `completedAt`=now + snap scheduledDate to today), bulk drag endpoint `PATCH /projects/:projectId/tasks/positions` (float positions, one transaction, completion-aware). Soft delete.
+  - Statuses: CRUD `/projects/:projectId/statuses`, delete requires `?targetStatusId=` (migrates tasks), cannot delete/unflag the last completed status.
+  - Dates: `scheduledDate` stored as `@db.Date` UTC-midnight; API serializes to/parses `YYYY-MM-DD` (helpers in `tasks.service.ts`).
+  - Frontend: task/status/member hooks, `TaskCard`, `TaskDrawer` (status/assignee/date/estimate edit), `StatusManager` (add/recolor/rename/delete-migrate/toggle done), interim status-column board on ProjectPage with quick-add. `Avatar` primitive.
+  - Estimate parse/format helpers in shared (`parseDurationToMinutes`, `formatMinutes`).
+- Phase 4 (Calendar planner / Kanban / Table views + dnd-kit drag) next.
+
+## DEFERRED (pick up later)
+- Rich text: task description is plain textarea for now; TipTap editor lands with notes (Phase 8) / can be added in Phase 4 polish.
+- dnd-kit drag-and-drop (tasks between days/columns, project/folder reorder): Phase 4 — bulk-positions endpoint already exists to back it.
 
 ## CONVENTIONS (added in Phase 2)
 - Request validation: zod schemas from `@teamboard/shared` via `@ZodBody(schema)` decorator (`src/common/pipes/zod-body.decorator.ts`). Not class-validator.
