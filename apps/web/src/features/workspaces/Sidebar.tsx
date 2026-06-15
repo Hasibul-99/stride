@@ -48,14 +48,23 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 overflow-y-auto p-2">
-        <NavLink
-          to="/app/team"
-          className={({ isActive }) =>
-            `block rounded-control px-2 py-1.5 text-sm ${isActive ? 'bg-background font-medium' : 'text-muted'}`
-          }
-        >
-          Team board
-        </NavLink>
+        {(
+          [
+            { to: '/app/team', label: 'Team board' },
+            { to: '/app/workload', label: 'Workload' },
+            { to: '/app/reports', label: 'Reports' },
+          ] as const
+        ).map((link) => (
+          <NavLink
+            key={link.to}
+            to={link.to}
+            className={({ isActive }) =>
+              `block rounded-control px-2 py-1.5 text-sm ${isActive ? 'bg-background font-medium' : 'text-muted'}`
+            }
+          >
+            {link.label}
+          </NavLink>
+        ))}
 
         <div className="mt-4 flex items-center justify-between px-2">
           <span className="text-xs font-semibold uppercase tracking-wide text-muted">

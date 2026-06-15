@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
+import { format } from 'date-fns';
 import { formatMinutes, parseDurationToMinutes } from '@teamboard/shared';
 import { COLOR_HEX } from '@/features/workspaces/colors';
+import { TimerButton } from '@/features/time/TimerButton';
+import { formatElapsed, useDeleteTimeEntry, useTaskTime } from '@/features/time/api';
 import {
   useDeleteTask,
   useProjectMembers,
@@ -141,7 +144,52 @@ export function TaskDrawer({ projectId, task, onClose }: Props) {
             Completed {new Date(task.completedAt).toLocaleDateString()}
           </div>
         )}
+
+        <TimeSection task={task} />
       </aside>
+    </div>
+  );
+}
+
+function TimeSection({ task }: { task: Task }) {
+  const { data } = useTaskTime(task.id);
+  const del = useDeleteTimeEntry(task.id);
+  const total = data?.totalSeconds ?? 0;
+  const estimateSec = (task.timeEstimateMinutes ?? 0) * 60;
+  const pct = estimateSec > 0 ? Math.min(100, Math.round((total / estimateSec) * 100)) : 0;
+
+  return (
+    <div className="border-t border-border pt-4">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted">Time</span>
+        <TimerButton taskId={task.id} />
+      </div>
+
+      <div className="mb-2 text-sm">
+        Tracked <strong>{formatElapsed(total)}</strong>
+        {estimateSec > 0 && <span className="text-muted"> / {formatMinutes(task.timeEstimateMinutes)} est</span>}
+      </div>
+      {estimateSec > 0 && (
+        <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-background">
+          <div
+            className="h-full"
+            style={{ width: `${pct}%`, background: pct > 100 ? COLOR_HEX.red : COLOR_HEX.blue }}
+          />
+        </div>
+      )}
+
+      <div className="space-y-1">
+        {data?.entries.map((e) => (
+          <div key={e.id} className="flex items-center gap-2 text-xs text-muted">
+            <span className="flex-1 truncate">
+              {e.user?.name} · {format(new Date(e.startedAt), 'd MMM HH:mm')}
+            </span>
+            <span>{e.durationSeconds ? formatElapsed(e.durationSeconds) : 'running'}</span>
+            <button onClick={() => del.mutate(e.id)} className="text-red-600">×</button>
+          </div>
+        ))}
+        {data && data.entries.length === 0 && <p className="text-xs text-muted">No time logged.</p>}
+      </div>
     </div>
   );
 }

@@ -54,7 +54,15 @@ PROJECT: TeamBoard — work management platform (Bordio-style). Teams plan work 
   - Reminders: BullMQ delayed job per participant at `startAt - reminderMinutesBefore` → `RemindersProcessor` creates a Notification. `BullModule.forRoot` connects to Redis (parsed from `REDIS_URL`).
   - Recurrence: pure generator `recurrence.generator.ts` (DAILY/WEEKLY-multi-weekday/MONTHLY, interval/until/count) — 6 jest tests green. Events with a rule materialize occurrences 8 weeks ahead (idempotent by recurrenceId+startAt), each with participants + reminders.
   - Frontend: events hooks, `EventModal` (participants + recurrence + reminder + color), events rendered in CalendarView day headers (tinted, click→`EventDrawer` with RSVP statuses), workload footer includes event durations, public `/rsvp` page.
-- Phase 6 (workload mgmt + time tracking) next.
+- Phase 6 complete:
+  - Time tracking: `POST /tasks/:id/time/start|stop` (one running entry per user — start auto-stops others), `GET /tasks/:id/time`, manual `POST /tasks/:id/time`, `PATCH/DELETE /time/:id` (own entries, or workspace OWNER/ADMIN), `GET /time/running`, `GET /workspaces/:id/time-report` (+ `.csv`). `TimeService.duration` = seconds.
+  - Workload: `GET /workspaces/:id/workload?from=&to=` → per member/day task+event minutes, counts, unestimated count, capacity; `PATCH /workspaces/:id/capacity` (admin). `MemberCapacity` default 480m.
+  - Frontend: `TimerButton` (play/stop on TaskCard + drawer), global `TimerPill` in AppLayout topbar (live tick, jump/stop), Time section in TaskDrawer (entries + tracked-vs-estimate bar), `WorkloadPage` (`/app/workload`, grid + editable capacity + over-tint), `ReportsPage` (`/app/reports`, by-user/by-project + CSV download via fetch+blob). Sidebar links added.
+- Phase 7 (realtime: websocket chat, presence, live board updates + notifications) next.
+
+### Phase 6 deferred
+- Assignee-load shown inline in date/assignee picker (workload endpoint exists; UI hint not wired).
+- 12h "timer still running" reconciliation prompt on return.
 
 ### Phase 5 deferred
 - Task recurrence (generator is generic + ready; only events wired so far).

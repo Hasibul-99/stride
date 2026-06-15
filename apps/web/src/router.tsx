@@ -8,6 +8,8 @@ import { HomePage } from '@/app/HomePage';
 import { ProjectPage } from '@/features/projects/ProjectPage';
 import { TeamPlannerPage } from '@/features/calendar/TeamPlannerPage';
 import { RsvpPage } from '@/features/events/RsvpPage';
+import { WorkloadPage } from '@/features/workload/WorkloadPage';
+import { ReportsPage } from '@/features/workload/ReportsPage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/app" replace /> },
@@ -25,6 +27,8 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <HomePage /> },
       { path: 'team', element: <TeamPlannerPage /> },
+      { path: 'workload', element: <WorkloadPage /> },
+      { path: 'reports', element: <ReportsPage /> },
       { path: 'projects/:id', element: <ProjectPage /> },
     ],
   },

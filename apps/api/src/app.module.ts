@@ -17,6 +17,8 @@ import { StatusesModule } from './statuses/statuses.module';
 import { TasksModule } from './tasks/tasks.module';
 import { PlannerModule } from './planner/planner.module';
 import { EventsModule } from './events/events.module';
+import { TimeModule } from './time/time.module';
+import { WorkloadModule } from './workload/workload.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 function redisConnection() {
@@ -45,6 +47,8 @@ function redisConnection() {
     TasksModule,
     PlannerModule,
     EventsModule,
+    TimeModule,
+    WorkloadModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
