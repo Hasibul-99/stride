@@ -58,7 +58,18 @@ PROJECT: TeamBoard — work management platform (Bordio-style). Teams plan work 
   - Time tracking: `POST /tasks/:id/time/start|stop` (one running entry per user — start auto-stops others), `GET /tasks/:id/time`, manual `POST /tasks/:id/time`, `PATCH/DELETE /time/:id` (own entries, or workspace OWNER/ADMIN), `GET /time/running`, `GET /workspaces/:id/time-report` (+ `.csv`). `TimeService.duration` = seconds.
   - Workload: `GET /workspaces/:id/workload?from=&to=` → per member/day task+event minutes, counts, unestimated count, capacity; `PATCH /workspaces/:id/capacity` (admin). `MemberCapacity` default 480m.
   - Frontend: `TimerButton` (play/stop on TaskCard + drawer), global `TimerPill` in AppLayout topbar (live tick, jump/stop), Time section in TaskDrawer (entries + tracked-vs-estimate bar), `WorkloadPage` (`/app/workload`, grid + editable capacity + over-tint), `ReportsPage` (`/app/reports`, by-user/by-project + CSV download via fetch+blob). Sidebar links added.
-- Phase 7 (realtime: websocket chat, presence, live board updates + notifications) next.
+- Phase 7 complete:
+  - Socket.IO `RealtimeGateway` (`@nestjs/websockets`/`platform-socket.io` pinned v10), JWT auth on handshake (`auth.token`), Redis adapter (`@socket.io/redis-adapter` + ioredis from `REDIS_URL`). Rooms: `user:{id}` (auto on connect, for notifications), `project:{id}`, `task:{id}` — joins validated via `AccessService`/`ChatService.assertAccess`.
+  - `RealtimeEmitter` (global, holds the io server; gateway sets it in afterInit) decouples services from the gateway → no circular deps. Services call `emitProject/emitTask/emitUser`.
+  - Chat: REST history (cursor) + unread + mark-read (`/tasks/:id/chat*`); socket `chat:send|edit|delete|typing` → emits `chat:new|updated|deleted|typing-ping` to task room. @mentions create notifications.
+  - Live board: tasks service emits `board:changed {projectId}` to project room on create/update/delete/bulk; clients invalidate `['tasks',pid]`/`['events']`/`['planner']`.
+  - Notifications (global module): persist + socket push `notification:new` to `user:{id}`; REST list (cursor) + unread-count + read/read-all. Triggers wired: TASK_ASSIGNED, MENTION, EVENT_REMINDER.
+  - Frontend: singleton socket (`lib/socket.ts`, Vite proxies `/socket.io` ws), `useProjectLive` (join+invalidate), `ChatPanel` in TaskDrawer (history + live + typing + mark-read), `NotificationBell` in topbar (unread badge + dropdown + socket push).
+- Phase 8 (files + notes) next.
+
+### Phase 7 deferred
+- Email digests for high-value notifications (BullMQ, 10-min unseen) — not built.
+- Notification deep-links to task/event drawer; notification preferences page; per-task chat unread badge on TaskCard; precise cache patching (uses invalidate, not echo-guarded patch).
 
 ### Phase 6 deferred
 - Assignee-load shown inline in date/assignee picker (workload endpoint exists; UI hint not wired).

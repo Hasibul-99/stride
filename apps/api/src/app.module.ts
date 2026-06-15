@@ -19,6 +19,9 @@ import { PlannerModule } from './planner/planner.module';
 import { EventsModule } from './events/events.module';
 import { TimeModule } from './time/time.module';
 import { WorkloadModule } from './workload/workload.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { ChatModule } from './chat/chat.module';
+import { RealtimeModule } from './realtime/realtime.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 function redisConnection() {
@@ -49,6 +52,9 @@ function redisConnection() {
     EventsModule,
     TimeModule,
     WorkloadModule,
+    NotificationsModule,
+    ChatModule,
+    RealtimeModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

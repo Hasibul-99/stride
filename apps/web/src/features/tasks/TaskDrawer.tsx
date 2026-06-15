@@ -4,6 +4,7 @@ import { formatMinutes, parseDurationToMinutes } from '@teamboard/shared';
 import { COLOR_HEX } from '@/features/workspaces/colors';
 import { TimerButton } from '@/features/time/TimerButton';
 import { formatElapsed, useDeleteTimeEntry, useTaskTime } from '@/features/time/api';
+import { ChatPanel } from '@/features/chat/ChatPanel';
 import {
   useDeleteTask,
   useProjectMembers,
@@ -146,6 +147,7 @@ export function TaskDrawer({ projectId, task, onClose }: Props) {
         )}
 
         <TimeSection task={task} />
+        <ChatPanel taskId={task.id} />
       </aside>
     </div>
   );

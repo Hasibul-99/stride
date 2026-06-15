@@ -6,6 +6,7 @@ import { Tabs } from '@/components/ui/Tabs';
 import { CalendarView } from '@/features/calendar/CalendarView';
 import { KanbanView } from '@/features/kanban/KanbanView';
 import { TableView } from '@/features/table/TableView';
+import { useProjectLive } from '@/features/realtime/useProjectLive';
 
 type View = 'calendar' | 'kanban' | 'table';
 
@@ -13,6 +14,7 @@ export function ProjectPage() {
   const { id } = useParams<{ id: string }>();
   const { data: project, isLoading, isError } = useProject(id);
   const [view, setView] = useState<View>('calendar');
+  useProjectLive(id);
 
   if (isLoading) return <p className="text-muted">Loading…</p>;
   if (isError || !project || !id) return <p className="text-muted">Project not found or no access.</p>;

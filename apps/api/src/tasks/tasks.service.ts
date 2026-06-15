@@ -6,8 +6,11 @@ import type {
   TaskQuery,
   UpdateTaskInput,
 } from '@teamboard/shared';
+import { SOCKET_EVENTS } from '@teamboard/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { AccessService } from '../access/access.service';
+import { RealtimeEmitter } from '../realtime/realtime.emitter';
+import { NotificationsService } from '../notifications/notifications.service';
 
 /** 'YYYY-MM-DD' → Date at UTC midnight (matches @db.Date storage). */
 function dateOnlyToUtc(value: string): Date {
@@ -28,7 +31,24 @@ export class TasksService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly access: AccessService,
+    private readonly emitter: RealtimeEmitter,
+    private readonly notifications: NotificationsService,
   ) {}
+
+  private emitBoard(projectId: string) {
+    this.emitter.emitProject(projectId, SOCKET_EVENTS.boardChanged, { projectId });
+  }
+
+  private async notifyAssignee(
+    assigneeId: string | null | undefined,
+    actorId: string,
+    taskId: string,
+    title: string,
+  ) {
+    if (assigneeId && assigneeId !== actorId) {
+      await this.notifications.create(assigneeId, 'TASK_ASSIGNED', { taskId, title });
+    }
+  }
 
   private serialize(task: Task) {
     return {
@@ -90,6 +110,8 @@ export class TasksService {
         createdById: userId,
       },
     });
+    this.emitBoard(projectId);
+    await this.notifyAssignee(task.assigneeId, userId, task.id, task.title);
     return this.serialize(task);
   }
 
@@ -137,6 +159,10 @@ export class TasksService {
     }
 
     const updated = await this.prisma.task.update({ where: { id: taskId }, data });
+    this.emitBoard(updated.projectId);
+    if (input.assigneeId !== undefined && input.assigneeId && input.assigneeId !== task.assigneeId) {
+      await this.notifyAssignee(input.assigneeId, userId, updated.id, updated.title);
+    }
     return this.serialize(updated);
   }
 
@@ -146,6 +172,7 @@ export class TasksService {
       where: { id: task.id },
       data: { deletedAt: new Date() },
     });
+    this.emitBoard(task.projectId);
   }
 
   /** Bulk position/status/date updates for drag-and-drop, in one transaction. */
@@ -194,6 +221,7 @@ export class TasksService {
         return this.prisma.task.update({ where: { id: u.id }, data });
       }),
     );
+    this.emitBoard(projectId);
     return { updated: input.updates.length };
   }
 
