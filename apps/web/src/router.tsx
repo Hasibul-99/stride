@@ -6,6 +6,7 @@ import { RequireAuth } from '@/features/auth/RequireAuth';
 import { AppLayout } from '@/app/AppLayout';
 import { HomePage } from '@/app/HomePage';
 import { ProjectPage } from '@/features/projects/ProjectPage';
+import { TeamPlannerPage } from '@/features/calendar/TeamPlannerPage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/app" replace /> },
@@ -21,6 +22,7 @@ export const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <HomePage /> },
+      { path: 'team', element: <TeamPlannerPage /> },
       { path: 'projects/:id', element: <ProjectPage /> },
     ],
   },

@@ -49,13 +49,12 @@ export function Sidebar() {
 
       <nav className="flex-1 overflow-y-auto p-2">
         <NavLink
-          to="/app"
-          end
+          to="/app/team"
           className={({ isActive }) =>
             `block rounded-control px-2 py-1.5 text-sm ${isActive ? 'bg-background font-medium' : 'text-muted'}`
           }
         >
-          Calendar
+          Team board
         </NavLink>
 
         <div className="mt-4 flex items-center justify-between px-2">

@@ -41,7 +41,19 @@ PROJECT: TeamBoard — work management platform (Bordio-style). Teams plan work 
   - Dates: `scheduledDate` stored as `@db.Date` UTC-midnight; API serializes to/parses `YYYY-MM-DD` (helpers in `tasks.service.ts`).
   - Frontend: task/status/member hooks, `TaskCard`, `TaskDrawer` (status/assignee/date/estimate edit), `StatusManager` (add/recolor/rename/delete-migrate/toggle done), interim status-column board on ProjectPage with quick-add. `Avatar` primitive.
   - Estimate parse/format helpers in shared (`parseDurationToMinutes`, `formatMinutes`).
-- Phase 4 (Calendar planner / Kanban / Table views + dnd-kit drag) next.
+- Phase 4 complete:
+  - Backend: workspace planner endpoint `GET /workspaces/:id/planner?from=&to=&assigneeId=` (tasks across visible projects, enriched with project/status/assignee) + `/planner-members`.
+  - dnd-kit: generic `SortableBoard` multi-container (features/board) reused by Calendar + Kanban. Position via float-midpoint helper (`features/tasks/positions.ts`), persisted through bulk-positions endpoint.
+  - CalendarView: week columns (Mon–Sun) + waiting-list panel + per-day workload footer (amber>8h/red>10h) + drag between days/waiting + filters (assignee/status/completed) + quick-add. Week nav + Today.
+  - KanbanView: status columns, drag changes status (completion-aware via bulk endpoint), quick-add, manage-statuses.
+  - TableView: sortable columns, inline edit (title/status/assignee/date), show/hide completed, row select + bulk status/delete.
+  - ProjectPage tabs Calendar/Kanban/Table. Team board page `/app/team` (planner grouped by member rows, workload tint) — read-only for now.
+- Phase 5 (events/meetings + ICS invites + recurrence) next.
+
+### Phase 4 deferred
+- Events not yet rendered in calendar (Phase 5).
+- Team board is read-only (cross-project drag not wired); single-project calendar/kanban have full drag.
+- Table: virtualization, group-by, column-visibility menu, files/chat/time columns not done (need later phases / large-list perf).
 
 ## DEFERRED (pick up later)
 - Rich text: task description is plain textarea for now; TipTap editor lands with notes (Phase 8) / can be added in Phase 4 polish.

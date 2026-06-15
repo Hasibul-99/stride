@@ -14,6 +14,7 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
 import { ProjectsModule } from './projects/projects.module';
 import { StatusesModule } from './statuses/statuses.module';
 import { TasksModule } from './tasks/tasks.module';
+import { PlannerModule } from './planner/planner.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 @Module({
@@ -34,6 +35,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     ProjectsModule,
     StatusesModule,
     TasksModule,
+    PlannerModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
