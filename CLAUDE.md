@@ -48,7 +48,18 @@ PROJECT: TeamBoard — work management platform (Bordio-style). Teams plan work 
   - KanbanView: status columns, drag changes status (completion-aware via bulk endpoint), quick-add, manage-statuses.
   - TableView: sortable columns, inline edit (title/status/assignee/date), show/hide completed, row select + bulk status/delete.
   - ProjectPage tabs Calendar/Kanban/Table. Team board page `/app/team` (planner grouped by member rows, workload tint) — read-only for now.
-- Phase 5 (events/meetings + ICS invites + recurrence) next.
+- Phase 5 complete:
+  - Events CRUD `/events` (personal or project). Participants = workspace users + external emails. On create/update: build ICS (`ics` pkg, stable `icsUid`, `sequence` bumped on update, METHOD:REQUEST) + email each participant via `MailService.sendCalendar` (Mailpit). Delete → METHOD:CANCEL email + soft delete.
+  - RSVP via signed HMAC token (`ENCRYPTION_KEY`) in invite links → public `POST /events/rsvp`. No storage.
+  - Reminders: BullMQ delayed job per participant at `startAt - reminderMinutesBefore` → `RemindersProcessor` creates a Notification. `BullModule.forRoot` connects to Redis (parsed from `REDIS_URL`).
+  - Recurrence: pure generator `recurrence.generator.ts` (DAILY/WEEKLY-multi-weekday/MONTHLY, interval/until/count) — 6 jest tests green. Events with a rule materialize occurrences 8 weeks ahead (idempotent by recurrenceId+startAt), each with participants + reminders.
+  - Frontend: events hooks, `EventModal` (participants + recurrence + reminder + color), events rendered in CalendarView day headers (tinted, click→`EventDrawer` with RSVP statuses), workload footer includes event durations, public `/rsvp` page.
+- Phase 6 (workload mgmt + time tracking) next.
+
+### Phase 5 deferred
+- Task recurrence (generator is generic + ready; only events wired so far).
+- Edit "this / this-and-following" occurrence split + nightly rolling materialize job (BullMQ repeat) — only immediate materialize-on-create done.
+- Google Calendar sync is Phase 9.
 
 ### Phase 4 deferred
 - Events not yet rendered in calendar (Phase 5).

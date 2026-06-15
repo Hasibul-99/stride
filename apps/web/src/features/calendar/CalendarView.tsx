@@ -18,7 +18,12 @@ import { TaskDrawer } from '@/features/tasks/TaskDrawer';
 import { positionForIndex } from '@/features/tasks/positions';
 import { SortableBoard, type BoardContainer } from '@/features/board/SortableBoard';
 import { Avatar } from '@/components/ui/Avatar';
-import { buildWeek, shiftWeeks, weekStart } from './week';
+import { useEvents, type CalEvent } from '@/features/events/api';
+import { EventModal } from '@/features/events/EventModal';
+import { EventDrawer } from '@/features/events/EventDrawer';
+import { format } from 'date-fns';
+import { COLOR_HEX } from '@/features/workspaces/colors';
+import { buildWeek, rangeOf, shiftWeeks, weekStart } from './week';
 import { cn } from '@/lib/utils';
 
 const WAITING = 'waiting';
@@ -31,11 +36,25 @@ export function CalendarView({ projectId, projectColor }: { projectId: string; p
 
   const [ref, setRef] = useState(() => weekStart(new Date()));
   const [openTask, setOpenTask] = useState<Task | null>(null);
+  const [openEvent, setOpenEvent] = useState<CalEvent | null>(null);
+  const [eventModalDate, setEventModalDate] = useState<string | null>(null);
   const [assigneeFilter, setAssigneeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showCompleted, setShowCompleted] = useState(true);
 
   const week = useMemo(() => buildWeek(ref), [ref]);
+  const { from, to } = rangeOf(week);
+  const { data: events } = useEvents(`${from}T00:00:00.000Z`, `${to}T23:59:59.000Z`, projectId);
+
+  const eventsByDay = useMemo(() => {
+    const map: Record<string, CalEvent[]> = {};
+    for (const e of events ?? []) {
+      const iso = e.startAt.slice(0, 10);
+      (map[iso] ??= []).push(e);
+    }
+    for (const k of Object.keys(map)) map[k].sort((a, b) => a.startAt.localeCompare(b.startAt));
+    return map;
+  }, [events]);
 
   const filtered = useMemo(() => {
     return (tasks ?? []).filter((t) => {
@@ -78,21 +97,44 @@ export function CalendarView({ projectId, projectColor }: { projectId: string; p
 
   const dayContainers: BoardContainer[] = week.map((d) => {
     const dayTasks = itemsByContainer[d.iso] ?? [];
-    const load = dayTasks.reduce((s, t) => s + (t.timeEstimateMinutes ?? 0), 0);
+    const dayEvents = eventsByDay[d.iso] ?? [];
+    const eventMin = dayEvents.reduce(
+      (s, e) => s + (new Date(e.endAt).getTime() - new Date(e.startAt).getTime()) / 60000,
+      0,
+    );
+    const load = dayTasks.reduce((s, t) => s + (t.timeEstimateMinutes ?? 0), 0) + eventMin;
     return {
       id: d.iso,
       className: 'flex w-[260px] shrink-0 flex-col rounded-card border border-border bg-surface',
       header: (
-        <div
-          className={cn(
-            'flex items-center justify-between border-b border-border px-3 py-2',
-            d.isToday && 'bg-primary/5',
+        <div>
+          <div
+            className={cn(
+              'flex items-center justify-between border-b border-border px-3 py-2',
+              d.isToday && 'bg-primary/5',
+            )}
+          >
+            <span className="text-sm font-medium">
+              {d.label} <span className="text-muted">{d.dayNum}</span>
+            </span>
+            <WorkloadBadge minutes={load} />
+          </div>
+          {dayEvents.length > 0 && (
+            <div className="space-y-1 px-2 pt-2">
+              {dayEvents.map((e) => (
+                <button
+                  key={e.id}
+                  onClick={() => setOpenEvent(e)}
+                  className="block w-full rounded px-1.5 py-1 text-left text-[11px] leading-tight"
+                  style={{ background: `${COLOR_HEX[e.color]}22`, color: COLOR_HEX[e.color] }}
+                >
+                  <span className="tabular-nums">{format(new Date(e.startAt), 'HH:mm')}</span>{' '}
+                  {e.title}
+                  {e.recurrenceId ? ' 🔁' : ''}
+                </button>
+              ))}
+            </div>
           )}
-        >
-          <span className="text-sm font-medium">
-            {d.label} <span className="text-muted">{d.dayNum}</span>
-          </span>
-          <WorkloadBadge minutes={load} />
         </div>
       ),
       footer: <QuickAdd projectId={projectId} scheduledDate={d.iso} />,
@@ -114,6 +156,7 @@ export function CalendarView({ projectId, projectColor }: { projectId: string; p
         onPrev={() => setRef((r) => shiftWeeks(r, -1))}
         onNext={() => setRef((r) => shiftWeeks(r, 1))}
         onToday={() => setRef(weekStart(new Date()))}
+        onNewEvent={() => setEventModalDate(week[0].iso)}
       />
 
       <div className="flex flex-1 gap-3 overflow-hidden">
@@ -169,6 +212,19 @@ export function CalendarView({ projectId, projectColor }: { projectId: string; p
           onClose={() => setOpenTask(null)}
         />
       )}
+      {openEvent && (
+        <EventDrawer
+          event={events?.find((e) => e.id === openEvent.id) ?? openEvent}
+          onClose={() => setOpenEvent(null)}
+        />
+      )}
+      {eventModalDate && (
+        <EventModal
+          projectId={projectId}
+          defaultDate={eventModalDate}
+          onClose={() => setEventModalDate(null)}
+        />
+      )}
     </div>
   );
 }
@@ -218,6 +274,7 @@ interface ToolbarProps {
   onPrev: () => void;
   onNext: () => void;
   onToday: () => void;
+  onNewEvent: () => void;
 }
 
 function Toolbar(p: ToolbarProps) {
@@ -235,6 +292,12 @@ function Toolbar(p: ToolbarProps) {
         </button>
       </div>
       <span className="text-sm font-medium">{p.title}</span>
+      <button
+        onClick={p.onNewEvent}
+        className="rounded-control border border-border px-3 py-1 text-sm"
+      >
+        + Event
+      </button>
 
       <div className="ml-auto flex items-center gap-2">
         <div className="flex -space-x-1">

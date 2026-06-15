@@ -7,12 +7,14 @@ import { AppLayout } from '@/app/AppLayout';
 import { HomePage } from '@/app/HomePage';
 import { ProjectPage } from '@/features/projects/ProjectPage';
 import { TeamPlannerPage } from '@/features/calendar/TeamPlannerPage';
+import { RsvpPage } from '@/features/events/RsvpPage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/app" replace /> },
   { path: '/auth/signin', element: <SignInPage /> },
   { path: '/auth/signup', element: <SignUpPage /> },
   { path: '/auth/callback', element: <AuthCallbackPage /> },
+  { path: '/rsvp', element: <RsvpPage /> },
   {
     path: '/app',
     element: (

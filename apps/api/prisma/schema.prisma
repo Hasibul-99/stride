@@ -270,6 +270,7 @@ model Event {
   reminderMinutesBefore Int?
   googleEventId        String?
   icsUid               String    @unique @default(cuid())
+  sequence             Int       @default(0)
   deletedAt            DateTime?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt

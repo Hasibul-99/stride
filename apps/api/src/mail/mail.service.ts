@@ -34,6 +34,28 @@ export class MailService {
     }
   }
 
+  /** Send a meeting invite/update/cancel carrying an ICS calendar part. */
+  async sendCalendar(
+    to: string,
+    subject: string,
+    html: string,
+    ics: string,
+    method: 'REQUEST' | 'CANCEL',
+  ): Promise<void> {
+    try {
+      await this.transporter.sendMail({
+        from: this.config.get<string>('SMTP_FROM') ?? 'TeamBoard <no-reply@teamboard.local>',
+        to,
+        subject,
+        html,
+        icalEvent: { method, content: ics, filename: 'invite.ics' },
+        alternatives: [{ contentType: `text/calendar; method=${method}`, content: ics }],
+      });
+    } catch (err) {
+      this.logger.error(`Failed to send calendar mail to ${to}: ${String(err)}`);
+    }
+  }
+
   async sendInvite(to: string, workspaceName: string, acceptUrl: string): Promise<void> {
     await this.send(
       to,
