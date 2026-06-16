@@ -1,32 +1,46 @@
+@import './tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Placeholder theme tokens. Full design system arrives in Phase 10. */
-:root {
-  --color-background: #f7f8fa;
-  --color-surface: #ffffff;
-  --color-border: #e5e7eb;
-  --color-foreground: #111827;
-  --color-muted: #6b7280;
-  --color-primary: #2563eb;
-  --color-primary-foreground: #ffffff;
-}
-
-.dark {
-  --color-background: #0f1115;
-  --color-surface: #181b20;
-  --color-border: #2a2e35;
-  --color-foreground: #f3f4f6;
-  --color-muted: #9ca3af;
-  --color-primary: #3b82f6;
-  --color-primary-foreground: #ffffff;
-}
-
 body {
   margin: 0;
   font-family: Inter, system-ui, -apple-system, sans-serif;
-  font-size: 13px;
+  font-size: var(--text-base);
   background: var(--color-background);
   color: var(--color-foreground);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 150ms ease-out only on color/opacity/transform (per design rules). */
+button,
+a,
+input,
+select,
+textarea,
+[role='button'] {
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out,
+    color 150ms ease-out,
+    opacity 150ms ease-out,
+    box-shadow 150ms ease-out,
+    transform 150ms ease-out;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-primary);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }

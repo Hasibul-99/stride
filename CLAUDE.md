@@ -77,7 +77,18 @@ PROJECT: TeamBoard — work management platform (Bordio-style). Teams plan work 
   - User fields: `gcalConnectedAt/gcalSyncToken/gcalChannelId/gcalResourceId`; Event `gcalSyncedAt`.
   - 5 integration tests (mocked googleapis): import+token, cancel→soft-delete, push insert+id, push delete, 410 re-sync. **Total api tests: 15/15.**
   - Frontend: `SettingsPage` (`/app/settings`) Integrations connect/sync/disconnect, Google icon on synced events in EventDrawer, "Also delete from Google?" confirm.
-- Phases 10 (design) & 11 (hardening/deploy) remain.
+- Phase 10 complete (design):
+  - `styles/tokens.css` — CSS-variable design system (surfaces, 3 greys, primary + tint/hover, semantic success/warning/danger + tints, 13px-base type scale, 4px spacing, radii control/card/modal, 3 subtle shadows, full dark-mode variant). Imported by `styles/index.css` (Inter, 150ms ease-out transitions on color/opacity/transform/shadow, focus-visible ring, scrollbar).
+  - `tailwind.config.js` consumes the vars (colors incl surface/border/foreground/muted/primary/semantic, fontSize, borderRadius, boxShadow).
+  - Primitives in `components/ui`: `Button` (primary/secondary/ghost/danger × sm/md/lg), `Input`, `Badge` (5 tones), `Modal`, plus existing `Avatar`/`Tabs`. Living style guide at `/app/design-system` (`DesignSystemPage`).
+  - TaskCard polish: shadow-sm + hover lift/shadow-md, completed = 55% opacity + ✓ replacing status dot + strikethrough.
+  - Marketing `LandingPage` at public `/` (hero + headline, browser-framed planner mockup, 8 feature blocks, industries strip, CTA, footer). `/` no longer redirects to `/app`.
+- Phase 11 (hardening + deploy) remains.
+
+### Phase 10 deferred / notes
+- Existing feature components already used token utility classes (bg-surface/border/muted/primary), so the token swap restyled them globally; not every inline-styled control was migrated to the new primitives.
+- Landing uses an abstract CSS mockup, not real seeded screenshots. No dark-mode toggle UI yet (tokens ready, add `.dark` on root to enable).
+- Web bundle ~984KB (TipTap+googleapis types stripped, but app is one chunk) — code-split in Phase 11 perf.
 
 ### Phase 9 deferred
 - Push-notification channel registration (`events.watch`) not created on connect — only the webhook receiver + 15-min polling intent exist; wire `cal.events.watch` + a BullMQ repeatable poll job for production.

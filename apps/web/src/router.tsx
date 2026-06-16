@@ -1,4 +1,6 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter } from 'react-router-dom';
+import { LandingPage } from '@/features/marketing/LandingPage';
+import { DesignSystemPage } from '@/features/design/DesignSystemPage';
 import { SignInPage } from '@/features/auth/SignInPage';
 import { SignUpPage } from '@/features/auth/SignUpPage';
 import { AuthCallbackPage } from '@/features/auth/AuthCallbackPage';
@@ -13,7 +15,7 @@ import { ReportsPage } from '@/features/workload/ReportsPage';
 import { SettingsPage } from '@/features/integrations/SettingsPage';
 
 export const router = createBrowserRouter([
-  { path: '/', element: <Navigate to="/app" replace /> },
+  { path: '/', element: <LandingPage /> },
   { path: '/auth/signin', element: <SignInPage /> },
   { path: '/auth/signup', element: <SignUpPage /> },
   { path: '/auth/callback', element: <AuthCallbackPage /> },
@@ -31,6 +33,7 @@ export const router = createBrowserRouter([
       { path: 'workload', element: <WorkloadPage /> },
       { path: 'reports', element: <ReportsPage /> },
       { path: 'settings', element: <SettingsPage /> },
+      { path: 'design-system', element: <DesignSystemPage /> },
       { path: 'projects/:id', element: <ProjectPage /> },
     ],
   },

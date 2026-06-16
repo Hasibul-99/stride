@@ -22,8 +22,8 @@ export function TaskCard({ task, status, assignee, projectColor, onClick }: Prop
       role="button"
       tabIndex={0}
       className={cn(
-        'group relative flex w-full cursor-pointer flex-col gap-2 rounded-card border border-border bg-surface p-2.5 pl-3 text-left transition hover:border-foreground/30',
-        completed && 'opacity-60',
+        'group relative flex w-full cursor-pointer flex-col gap-2 rounded-card border border-border bg-surface p-2.5 pl-3 text-left shadow-sm transition hover:-translate-y-px hover:border-border-strong hover:shadow-md',
+        completed && 'opacity-[0.55]',
       )}
     >
       <span
@@ -34,12 +34,16 @@ export function TaskCard({ task, status, assignee, projectColor, onClick }: Prop
         {task.title}
       </span>
       <div className="flex items-center gap-2">
-        {status && (
-          <span
-            className="h-2.5 w-2.5 rounded-full"
-            style={{ background: COLOR_HEX[status.color] }}
-            title={status.name}
-          />
+        {completed ? (
+          <span className="text-success" title="Completed">✓</span>
+        ) : (
+          status && (
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ background: COLOR_HEX[status.color] }}
+              title={status.name}
+            />
+          )
         )}
         {task.timeEstimateMinutes ? (
           <span className="rounded bg-background px-1.5 py-0.5 text-[11px] text-muted">
