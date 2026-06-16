@@ -46,6 +46,10 @@ model User {
   timezone           String   @default("UTC")
   googleId           String?  @unique
   googleRefreshToken String? // encrypted at rest (AES-256-GCM)
+  gcalConnectedAt    DateTime?
+  gcalSyncToken      String?
+  gcalChannelId      String?
+  gcalResourceId     String?
   createdAt          DateTime @default(now())
 
   ownedWorkspaces  Workspace[]        @relation("WorkspaceOwner")
@@ -269,6 +273,7 @@ model Event {
   recurrenceId         String?
   reminderMinutesBefore Int?
   googleEventId        String?
+  gcalSyncedAt         DateTime? // last time pushed to / pulled from Google (loop guard)
   icsUid               String    @unique @default(cuid())
   sequence             Int       @default(0)
   deletedAt            DateTime?

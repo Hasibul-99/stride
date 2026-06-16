@@ -24,6 +24,12 @@ export function EventDrawer({ event, onClose }: { event: CalEvent; onClose: () =
           <button onClick={onClose} className="text-muted hover:text-foreground">← Close</button>
           <button
             onClick={async () => {
+              if (
+                event.googleEventId &&
+                !window.confirm('Also delete this event from your Google Calendar?')
+              ) {
+                return;
+              }
               await del.mutateAsync(event.id);
               onClose();
             }}
@@ -36,6 +42,7 @@ export function EventDrawer({ event, onClose }: { event: CalEvent; onClose: () =
         <div className="flex items-center gap-2">
           <span className="h-3 w-3 rounded-full" style={{ background: COLOR_HEX[event.color] }} />
           <h2 className="text-lg font-semibold">{event.title}</h2>
+          {event.googleEventId && <span title="Synced with Google Calendar">📅</span>}
         </div>
 
         <div className="text-sm text-muted">

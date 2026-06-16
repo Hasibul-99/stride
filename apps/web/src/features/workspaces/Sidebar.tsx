@@ -53,6 +53,7 @@ export function Sidebar() {
             { to: '/app/team', label: 'Team board' },
             { to: '/app/workload', label: 'Workload' },
             { to: '/app/reports', label: 'Reports' },
+            { to: '/app/settings', label: 'Settings' },
           ] as const
         ).map((link) => (
           <NavLink

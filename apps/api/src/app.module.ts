@@ -24,6 +24,7 @@ import { ChatModule } from './chat/chat.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { FilesModule } from './files/files.module';
 import { NotesModule } from './notes/notes.module';
+import { IntegrationsModule } from './integrations/integrations.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 function redisConnection() {
@@ -59,6 +60,7 @@ function redisConnection() {
     RealtimeModule,
     FilesModule,
     NotesModule,
+    IntegrationsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

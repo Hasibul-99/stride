@@ -70,7 +70,18 @@ PROJECT: TeamBoard — work management platform (Bordio-style). Teams plan work 
   - Notes: CRUD `/projects/:id/notes` + `/notes/:id` (TipTap JSON content). Update emits `board:changed {noteUpdated}` → frontend conflict banner (last-write-wins, not CRDT).
   - Search: `GET /workspaces/:id/search?q=` — tasks + notes by title (ILIKE) across accessible projects (guest-scoped). (FTS tsvector/GIN refinement deferred; note-content search not included.)
   - Frontend: `FilesSection` in TaskDrawer (drag-drop + click upload, image thumbs, download, delete), Notes tab on ProjectPage (`NotesView` list + `NoteEditor` TipTap + 800ms autosave + Saved indicator + refresh banner), `SearchPalette` (Cmd/Ctrl+K) in AppLayout.
-- Phase 9 (Google Calendar sync) next — but Phases 10 (design) & 11 (hardening/deploy) also remain.
+- Phase 9 complete (Google Calendar two-way sync):
+  - AES-256-GCM `crypto.util` (key derived from `ENCRYPTION_KEY`) encrypts the stored Google refresh token. 4 unit tests.
+  - `GoogleCalendarService`: incremental-consent connect URL (calendar.events scope, state=userId), callback stores encrypted token + runs initial import (past 1wk/future 8wk, primary calendar). `syncIncremental` via syncToken; 410 GONE → clears token + full re-sync. `pushEvent` (insert/patch/delete) for owner's personal events with loop guard (`gcalSyncedAt >= updatedAt` ⇒ skip). Webhook handler `handleWebhook(channelId,resourceId)` → sync. Graceful when unconfigured (status `configured:false`, connect → 503).
+  - `IntegrationsController`: `GET status|connect`, `GET callback` (Public, state-based), `POST sync`, `DELETE` disconnect, `POST webhook` (Public). EventsService pushes personal-event create/update/delete to Google.
+  - User fields: `gcalConnectedAt/gcalSyncToken/gcalChannelId/gcalResourceId`; Event `gcalSyncedAt`.
+  - 5 integration tests (mocked googleapis): import+token, cancel→soft-delete, push insert+id, push delete, 410 re-sync. **Total api tests: 15/15.**
+  - Frontend: `SettingsPage` (`/app/settings`) Integrations connect/sync/disconnect, Google icon on synced events in EventDrawer, "Also delete from Google?" confirm.
+- Phases 10 (design) & 11 (hardening/deploy) remain.
+
+### Phase 9 deferred
+- Push-notification channel registration (`events.watch`) not created on connect — only the webhook receiver + 15-min polling intent exist; wire `cal.events.watch` + a BullMQ repeatable poll job for production.
+- Sync only covers the user's primary calendar + personal (projectId null) TB events.
 
 ### Phase 8 deferred
 - Postgres FTS (tsvector + GIN) — currently ILIKE title search; note-content/body not searched.

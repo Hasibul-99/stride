@@ -22,6 +22,7 @@ export interface CalEvent {
   color: ProjectColor;
   reminderMinutesBefore: number | null;
   recurrenceId: string | null;
+  googleEventId: string | null;
   participants: EventParticipant[];
 }
 

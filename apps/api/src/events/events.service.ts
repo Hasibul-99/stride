@@ -15,6 +15,7 @@ import { MailService } from '../mail/mail.service';
 import { RemindersService } from '../reminders/reminders.service';
 import { IcsService } from './ics.service';
 import { generateOccurrences } from '../recurrence/recurrence.generator';
+import { GoogleCalendarService } from '../integrations/google-calendar.service';
 
 const HORIZON_WEEKS = 8;
 
@@ -27,7 +28,13 @@ export class EventsService {
     private readonly reminders: RemindersService,
     private readonly ics: IcsService,
     private readonly config: ConfigService,
+    private readonly gcal: GoogleCalendarService,
   ) {}
+
+  /** Push personal events the user owns to their Google Calendar (fire-and-forget). */
+  private pushToGoogle(userId: string, projectId: string | null, eventId: string, action: 'upsert' | 'delete') {
+    if (projectId === null) void this.gcal.pushEvent(userId, eventId, action);
+  }
 
   // ─── RSVP token (stateless HMAC) ───────────────────────
 
@@ -170,6 +177,7 @@ export class EventsService {
       await this.materialize(event.id, input.recurrence);
     }
 
+    this.pushToGoogle(userId, event.projectId, event.id, 'upsert');
     return this.get(userId, event.id);
   }
 
@@ -197,7 +205,7 @@ export class EventsService {
     await this.prisma.event.update({ where: { id: eventId }, data });
     await this.sendInvites(eventId, 'REQUEST');
     await this.scheduleReminders(eventId);
-    void existing;
+    this.pushToGoogle(userId, existing.projectId, eventId, 'upsert');
     return this.get(userId, eventId);
   }
 
@@ -207,6 +215,7 @@ export class EventsService {
     for (const p of event.participants) {
       if (p.userId) await this.reminders.cancel(eventId, p.userId);
     }
+    this.pushToGoogle(userId, event.projectId, eventId, 'delete');
     await this.prisma.event.update({ where: { id: eventId }, data: { deletedAt: new Date() } });
   }
 

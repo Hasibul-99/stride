@@ -10,6 +10,7 @@ import { TeamPlannerPage } from '@/features/calendar/TeamPlannerPage';
 import { RsvpPage } from '@/features/events/RsvpPage';
 import { WorkloadPage } from '@/features/workload/WorkloadPage';
 import { ReportsPage } from '@/features/workload/ReportsPage';
+import { SettingsPage } from '@/features/integrations/SettingsPage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/app" replace /> },
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
       { path: 'team', element: <TeamPlannerPage /> },
       { path: 'workload', element: <WorkloadPage /> },
       { path: 'reports', element: <ReportsPage /> },
+      { path: 'settings', element: <SettingsPage /> },
       { path: 'projects/:id', element: <ProjectPage /> },
     ],
   },
