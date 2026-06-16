@@ -83,7 +83,19 @@ PROJECT: TeamBoard — work management platform (Bordio-style). Teams plan work 
   - Primitives in `components/ui`: `Button` (primary/secondary/ghost/danger × sm/md/lg), `Input`, `Badge` (5 tones), `Modal`, plus existing `Avatar`/`Tabs`. Living style guide at `/app/design-system` (`DesignSystemPage`).
   - TaskCard polish: shadow-sm + hover lift/shadow-md, completed = 55% opacity + ✓ replacing status dot + strikethrough.
   - Marketing `LandingPage` at public `/` (hero + headline, browser-framed planner mockup, 8 feature blocks, industries strip, CTA, footer). `/` no longer redirects to `/app`.
-- Phase 11 (hardening + deploy) remains.
+- Phase 11 complete (hardening + deploy) — **ALL 11 PHASES DONE**:
+  - Security e2e `test/security.e2e-spec.ts`: guest-of-A → 403 on project B / its tasks / workspace members; presign rejects disallowed MIME. `SECURITY.md` written.
+  - Frontend resilience: `ErrorBoundary` (main.tsx), global toast (`store/toast.store.ts` + `Toaster`), MutationCache `onError` → toast (401 skipped, handled by refresh interceptor).
+  - Perf: route-level `React.lazy` + Suspense in router → initial bundle 984KB→457KB, ProjectPage (TipTap+dnd) split into its own chunk.
+  - Playwright scaffold: `apps/web/playwright.config.ts` + `apps/web/e2e/critical-flows.spec.ts` (needs `playwright install` + live stack; `pnpm --filter @teamboard/web e2e`).
+  - eslint: added `eslint-plugin-react-hooks` (scoped to apps/web) ; `pnpm lint` clean.
+  - Deploy: `Dockerfile.api` (multi-stage, `pnpm deploy --prod`, entrypoint runs `prisma migrate deploy`), `Dockerfile.web` (build → nginx), `docker/nginx.conf` (gzip, asset cache, /api + /socket.io proxy, SPA fallback), `docker-compose.prod.yml` (postgres + daily backup, redis AOF, api ×2, web), `.github/workflows/ci.yml` (lint→typecheck→test→e2e→build→docker), `DEPLOYMENT.md`, `TESTING.md`. `prisma` moved to api runtime deps for in-container migrate.
+- Tests: **15 unit + 14 e2e green**. `pnpm build/lint/typecheck` all clean.
+
+### Phase 11 deferred
+- Real Sentry wiring (hook points noted: ErrorBoundary + global exception filter).
+- Playwright multi-browser websocket test + ICS-in-Mailpit assertion (scaffolded, not run here — no browser binaries).
+- Virus scanner (stub), `events.watch` push channel + poll job (Phase 9), code-split web further.
 
 ### Phase 10 deferred / notes
 - Existing feature components already used token utility classes (bg-surface/border/muted/primary), so the token swap restyled them globally; not every inline-styled control was migrated to the new primitives.

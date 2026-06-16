@@ -6,6 +6,10 @@ coverage/
 *.log
 .env
 .env.local
+.env.prod
+backups/
+test-results/
+playwright-report/
 .DS_Store
 .vscode/
 .idea/
