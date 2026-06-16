@@ -6,9 +6,10 @@ import { Tabs } from '@/components/ui/Tabs';
 import { CalendarView } from '@/features/calendar/CalendarView';
 import { KanbanView } from '@/features/kanban/KanbanView';
 import { TableView } from '@/features/table/TableView';
+import { NotesView } from '@/features/notes/NotesView';
 import { useProjectLive } from '@/features/realtime/useProjectLive';
 
-type View = 'calendar' | 'kanban' | 'table';
+type View = 'calendar' | 'kanban' | 'table' | 'notes';
 
 export function ProjectPage() {
   const { id } = useParams<{ id: string }>();
@@ -30,6 +31,7 @@ export function ProjectPage() {
               { id: 'calendar', label: 'Calendar' },
               { id: 'kanban', label: 'Kanban' },
               { id: 'table', label: 'Table' },
+              { id: 'notes', label: 'Notes' },
             ]}
             active={view}
             onChange={setView}
@@ -41,6 +43,7 @@ export function ProjectPage() {
         {view === 'calendar' && <CalendarView projectId={id} projectColor={project.color} />}
         {view === 'kanban' && <KanbanView projectId={id} projectColor={project.color} />}
         {view === 'table' && <TableView projectId={id} />}
+        {view === 'notes' && <NotesView projectId={id} />}
       </div>
     </div>
   );

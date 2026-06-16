@@ -335,6 +335,34 @@ Frontend:
 - If the user closes the tab with a timer running, the entry keeps running server-side; on return show a "Timer still running — keep or discard?" reconciliation prompt if it exceeds 12h
 ```
 
+## Prompt 6.3 — Analytics & reporting dashboard
+
+```
+Build an analytics & reporting dashboard — this powers the "productivity tracker", "performance tracker", and "team tracker" angles of the product. Everything reads from existing data (tasks, completedAt, time entries, events, statuses); add no new core tables, only an optional materialized summary table if queries get slow.
+
+API — all workspace-scoped, all respecting membership/guest visibility, all accepting from/to/projectId[]/userId[] filters:
+- GET /analytics/summary → headline KPIs for the range: tasks completed, tasks created, completion rate, total time tracked, avg time-to-complete (createdAt → completedAt), active members, overdue count (scheduledDate in past and not completed)
+- GET /analytics/throughput → tasks completed per day/week (time series), with a parallel created series so you can see created-vs-completed (burn-up style)
+- GET /analytics/by-member → per member: completed count, time tracked, estimated-vs-actual (sum estimate vs sum tracked), on-time rate (completed on or before scheduledDate), current open load. This is the employee productivity/performance view.
+- GET /analytics/by-project → per project: open vs completed, time tracked, member contribution breakdown
+- GET /analytics/by-status → current distribution of open tasks across statuses (funnel), plus avg time each task spends in each status if status-change history is available (if not, add a lightweight TaskStatusHistory row written on every status change — implement that now so this metric works)
+- GET /analytics/workload-heatmap → member × day grid of planned hours over the range (reuse Phase 6.1 workload math)
+- GET /analytics/estimate-accuracy → scatter of estimate vs actual per completed task, plus an accuracy ratio per member
+- CSV/XLSX export for every report (reuse the time-report export pattern)
+
+Add TaskStatusHistory: id, taskId, fromStatusId, toStatusId, changedById, changedAt — written whenever a task status changes (do it in the task service transaction, and backfill nothing). Index (taskId, changedAt).
+
+Frontend — a dedicated /app/analytics route, with sub-tabs Overview / People / Projects / Time:
+- Global filter bar: date-range picker (presets: this week, last week, this month, last 30 days, custom), project multi-select, member multi-select. Filters persist in the URL query string so reports are shareable.
+- Overview: KPI stat cards (with delta vs previous equivalent period and up/down arrows), the created-vs-completed throughput line chart, the status-distribution funnel, and an overdue list.
+- People: a sortable table (member, completed, time tracked, est-vs-actual bar, on-time %, open load) PLUS the workload heatmap (color intensity = planned hours, capacity-aware coloring from Phase 6.1). Clicking a member filters the whole dashboard to them.
+- Projects: per-project cards with open/completed donut, time tracked, and a small contributor breakdown bar.
+- Time: time-tracked-by-day area chart, estimate-accuracy scatter, and the existing filterable time report table.
+- Use the charting library already available (Recharts) with the design tokens — muted palette, no chart junk, clear empty states ("No completed tasks in this range"), and a top-right export button on every panel.
+
+Performance: these are aggregate queries over potentially large task/time tables — write them as efficient grouped SQL via Prisma ($queryRaw where cleaner), add the indexes they need, and cache each report in Redis for 60s keyed by workspace+filters. Add unit tests for the metric calculations (completion rate, on-time rate, time-to-complete, estimate accuracy) using a fixed seed dataset with known expected values, and watch the timezone boundary on "per day" buckets (bucket by the requesting user's timezone, not UTC).
+```
+
 ---
 
 # PHASE 7 — Realtime: Chat, Presence, Live Updates
@@ -505,7 +533,7 @@ Prepare production deployment:
 | M1 — Foundation | 0, 1, 2 | Sign up, create workspace/projects/folders, invite people |
 | M2 — Tasks work | 3, 4.1 | The weekly planner with drag & drop + waiting list |
 | M3 — Full views | 4.2, 4.3, 5 | Kanban, table, meetings with ICS invites, recurring items |
-| M4 — Team power | 6, 7 | Workload, time tracking, chat, live updates, notifications |
+| M4 — Team power | 6, 7 | Workload, time tracking, analytics dashboard, chat, live updates, notifications |
 | M5 — Complete | 8, 9 | Files, notes, search, Google Calendar sync |
 | M6 — Ship | 10, 11 | Designed, tested, deployed |
 

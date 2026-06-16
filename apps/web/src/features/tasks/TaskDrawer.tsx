@@ -5,6 +5,7 @@ import { COLOR_HEX } from '@/features/workspaces/colors';
 import { TimerButton } from '@/features/time/TimerButton';
 import { formatElapsed, useDeleteTimeEntry, useTaskTime } from '@/features/time/api';
 import { ChatPanel } from '@/features/chat/ChatPanel';
+import { FilesSection } from '@/features/files/FilesSection';
 import {
   useDeleteTask,
   useProjectMembers,
@@ -147,6 +148,7 @@ export function TaskDrawer({ projectId, task, onClose }: Props) {
         )}
 
         <TimeSection task={task} />
+        <FilesSection taskId={task.id} />
         <ChatPanel taskId={task.id} />
       </aside>
     </div>

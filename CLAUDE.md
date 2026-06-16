@@ -65,7 +65,17 @@ PROJECT: TeamBoard — work management platform (Bordio-style). Teams plan work 
   - Live board: tasks service emits `board:changed {projectId}` to project room on create/update/delete/bulk; clients invalidate `['tasks',pid]`/`['events']`/`['planner']`.
   - Notifications (global module): persist + socket push `notification:new` to `user:{id}`; REST list (cursor) + unread-count + read/read-all. Triggers wired: TASK_ASSIGNED, MENTION, EVENT_REMINDER.
   - Frontend: singleton socket (`lib/socket.ts`, Vite proxies `/socket.io` ws), `useProjectLive` (join+invalidate), `ChatPanel` in TaskDrawer (history + live + typing + mark-read), `NotificationBell` in topbar (unread badge + dropdown + socket push).
-- Phase 8 (files + notes) next.
+- Phase 8 complete:
+  - Files: S3/MinIO presigned flow — `POST /files/presign` → client direct PUT → `POST /files/confirm` (Attachment row). Mime whitelist + 25MB cap + virus-scan stub. `GET /tasks/:id/files` (incl chat-posted), `GET /files/:id/download` (short-lived presigned GET), `DELETE /files/:id` (uploader or admin). `S3Service` uses `forcePathStyle` for MinIO.
+  - Notes: CRUD `/projects/:id/notes` + `/notes/:id` (TipTap JSON content). Update emits `board:changed {noteUpdated}` → frontend conflict banner (last-write-wins, not CRDT).
+  - Search: `GET /workspaces/:id/search?q=` — tasks + notes by title (ILIKE) across accessible projects (guest-scoped). (FTS tsvector/GIN refinement deferred; note-content search not included.)
+  - Frontend: `FilesSection` in TaskDrawer (drag-drop + click upload, image thumbs, download, delete), Notes tab on ProjectPage (`NotesView` list + `NoteEditor` TipTap + 800ms autosave + Saved indicator + refresh banner), `SearchPalette` (Cmd/Ctrl+K) in AppLayout.
+- Phase 9 (Google Calendar sync) next — but Phases 10 (design) & 11 (hardening/deploy) also remain.
+
+### Phase 8 deferred
+- Postgres FTS (tsvector + GIN) — currently ILIKE title search; note-content/body not searched.
+- Files on events/chat-composer in UI (backend supports event/message targets; only task UI wired).
+- Paste-from-clipboard upload; lightbox (thumbs link to presigned URL in new tab).
 
 ### Phase 7 deferred
 - Email digests for high-value notifications (BullMQ, 10-min unseen) — not built.

@@ -22,6 +22,8 @@ import { WorkloadModule } from './workload/workload.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ChatModule } from './chat/chat.module';
 import { RealtimeModule } from './realtime/realtime.module';
+import { FilesModule } from './files/files.module';
+import { NotesModule } from './notes/notes.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 function redisConnection() {
@@ -55,6 +57,8 @@ function redisConnection() {
     NotificationsModule,
     ChatModule,
     RealtimeModule,
+    FilesModule,
+    NotesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

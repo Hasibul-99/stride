@@ -6,3 +6,5 @@ export * from './schemas/task.js';
 export * from './schemas/event.js';
 export * from './schemas/time.js';
 export * from './schemas/chat.js';
+export * from './schemas/file.js';
+export * from './schemas/note.js';
