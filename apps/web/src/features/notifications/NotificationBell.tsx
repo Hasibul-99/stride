@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { SOCKET_EVENTS } from '@teamboard/shared';
@@ -22,6 +23,7 @@ const LABELS: Record<string, string> = {
 
 export function NotificationBell() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
   const unread = useQuery({
@@ -53,6 +55,15 @@ export function NotificationBell() {
     qc.invalidateQueries({ queryKey: ['notif-list'] });
   }
 
+  async function openNotif(n: Notification) {
+    await api.post(`/notifications/${n.id}/read`).catch(() => undefined);
+    qc.invalidateQueries({ queryKey: ['notif-unread'] });
+    qc.invalidateQueries({ queryKey: ['notif-list'] });
+    setOpen(false);
+    const projectId = n.payload.projectId;
+    if (typeof projectId === 'string') navigate(`/app/projects/${projectId}`);
+  }
+
   const count = unread.data ?? 0;
 
   return (
@@ -74,9 +85,10 @@ export function NotificationBell() {
           </div>
           <div className="max-h-80 overflow-y-auto">
             {(list.data ?? []).map((n) => (
-              <div
+              <button
                 key={n.id}
-                className={`rounded-control px-2 py-1.5 text-sm ${n.readAt ? 'text-muted' : 'font-medium'}`}
+                onClick={() => openNotif(n)}
+                className={`block w-full rounded-control px-2 py-1.5 text-left text-sm hover:bg-background ${n.readAt ? 'text-muted' : 'font-medium'}`}
               >
                 <span>{LABELS[n.type] ?? n.type}</span>
                 {typeof n.payload.title === 'string' && <span> · {n.payload.title}</span>}
@@ -84,7 +96,7 @@ export function NotificationBell() {
                 <div className="text-[11px] text-muted">
                   {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
                 </div>
-              </div>
+              </button>
             ))}
             {list.data && list.data.length === 0 && (
               <p className="px-2 py-3 text-sm text-muted">Nothing yet.</p>

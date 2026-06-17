@@ -1,4 +1,5 @@
 import { useGcalConnect, useGcalDisconnect, useGcalStatus, useGcalSync } from './api';
+import { NotificationPrefs } from '@/features/notifications/NotificationPrefs';
 
 export function SettingsPage() {
   const { data: status } = useGcalStatus();
@@ -52,6 +53,12 @@ export function SettingsPage() {
             </button>
           )}
         </div>
+      </section>
+
+      <section className="mt-6 rounded-card border border-border p-5">
+        <h2 className="mb-1 text-lg font-medium">Notifications</h2>
+        <p className="mb-4 text-sm text-muted">Choose what reaches you in-app and by email.</p>
+        <NotificationPrefs />
       </section>
     </div>
   );

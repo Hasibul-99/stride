@@ -58,7 +58,14 @@ export function TaskDrawer({ projectId, task, onClose }: Props) {
           </button>
           <button
             onClick={async () => {
-              await del.mutateAsync(task.id);
+              if (task.recurrenceId) {
+                const all = window.confirm(
+                  'Recurring task. OK = delete ALL occurrences, Cancel = just this one.',
+                );
+                await del.mutateAsync({ id: task.id, scope: all ? 'ALL' : 'THIS' });
+              } else {
+                await del.mutateAsync(task.id);
+              }
               onClose();
             }}
             className="text-sm text-red-600"

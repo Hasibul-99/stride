@@ -1,20 +1,20 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import type { SearchResults } from '@teamboard/shared';
 import { PrismaService } from '../prisma/prisma.service';
-import { AccessService } from '../access/access.service';
+
+interface Row {
+  id: string;
+  title: string;
+  projectId: string;
+}
 
 @Injectable()
 export class SearchService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly access: AccessService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  /** Search tasks + notes by title across projects the user can see. */
+  /** Full-text search (Postgres tsvector + GIN) over tasks + notes the user can see. */
   async search(userId: string, workspaceId: string, q: string): Promise<SearchResults> {
-    await this.access.assertWorkspaceMember(userId, workspaceId).catch(() => undefined);
-
-    // Projects the user can see in this workspace.
     const wsMember = await this.prisma.workspaceMember.findUnique({
       where: { workspaceId_userId: { workspaceId, userId } },
     });
@@ -32,24 +32,18 @@ export class SearchService {
     const nameById = new Map(projects.map((p) => [p.id, p.name]));
     if (projectIds.length === 0) return { tasks: [], notes: [] };
 
+    const ids = Prisma.join(projectIds);
     const [tasks, notes] = await Promise.all([
-      this.prisma.task.findMany({
-        where: {
-          projectId: { in: projectIds },
-          deletedAt: null,
-          title: { contains: q, mode: 'insensitive' },
-        },
-        select: { id: true, title: true, projectId: true },
-        take: 20,
-      }),
-      this.prisma.note.findMany({
-        where: {
-          projectId: { in: projectIds },
-          title: { contains: q, mode: 'insensitive' },
-        },
-        select: { id: true, title: true, projectId: true },
-        take: 20,
-      }),
+      this.prisma.$queryRaw<Row[]>`
+        SELECT "id", "title", "projectId" FROM "tasks"
+        WHERE "deletedAt" IS NULL AND "projectId" IN (${ids})
+          AND "searchVector" @@ websearch_to_tsquery('english', ${q})
+        LIMIT 20`,
+      this.prisma.$queryRaw<Row[]>`
+        SELECT "id", "title", "projectId" FROM "notes"
+        WHERE "projectId" IN (${ids})
+          AND "searchVector" @@ websearch_to_tsquery('english', ${q})
+        LIMIT 20`,
     ]);
 
     return {

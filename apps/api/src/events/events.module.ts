@@ -8,5 +8,6 @@ import { RemindersModule } from '../reminders/reminders.module';
   imports: [RemindersModule],
   controllers: [EventsController],
   providers: [EventsService, IcsService],
+  exports: [EventsService],
 })
 export class EventsModule {}

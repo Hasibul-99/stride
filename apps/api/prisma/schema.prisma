@@ -50,6 +50,8 @@ model User {
   gcalSyncToken      String?
   gcalChannelId      String?
   gcalResourceId     String?
+  emailNotifications Boolean  @default(true)
+  notifPrefs         Json? // { [type]: { inApp: bool, email: bool } }
   createdAt          DateTime @default(now())
 
   ownedWorkspaces  Workspace[]        @relation("WorkspaceOwner")
@@ -241,6 +243,8 @@ model Task {
   deletedAt          DateTime?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
+  /// Generated tsvector (managed by the fts migration, not by Prisma).
+  searchVector Unsupported("tsvector")?
 
   project    Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
   status     TaskStatus    @relation(fields: [statusId], references: [id])
@@ -254,6 +258,7 @@ model Task {
   @@index([projectId, statusId, position])
   @@index([assigneeId, scheduledDate])
   @@index([recurrenceId])
+  @@index([searchVector], type: Gin)
   @@map("tasks")
 }
 
@@ -411,11 +416,14 @@ model Note {
   createdById String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  /// Generated tsvector (managed by the fts migration, not by Prisma).
+  searchVector Unsupported("tsvector")?
 
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdBy User    @relation(fields: [createdById], references: [id])
 
   @@index([projectId])
+  @@index([searchVector], type: Gin)
   @@map("notes")
 }
 

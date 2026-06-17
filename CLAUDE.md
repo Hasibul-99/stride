@@ -95,7 +95,23 @@ PROJECT: TeamBoard — work management platform (Bordio-style). Teams plan work 
 ### Phase 11 deferred
 - Real Sentry wiring (hook points noted: ErrorBoundary + global exception filter).
 - Playwright multi-browser websocket test + ICS-in-Mailpit assertion (scaffolded, not run here — no browser binaries).
-- Virus scanner (stub), `events.watch` push channel + poll job (Phase 9), code-split web further.
+
+## GAP-CLOSURE PASS (post-Phase-11) — completed
+Went back and finished playbook requirements previously deferred:
+- **Task recurrence**: `createTask` accepts `recurrence`; `TasksService.materialize` generates occurrences 8wk ahead (idempotent). Verified: weekly×3 → 3 occurrences.
+- **Recurrence edit-scope**: `DELETE /tasks/:id?scope=` and `/events/:id?scope=` (THIS / THIS_AND_FOLLOWING / ALL); completed occurrences never altered. Drawers prompt scope when recurring.
+- **Nightly rolling materialize**: `RecurrenceQueueModule` BullMQ repeatable (`0 2 * * *`) → `rollingMaterialize` for tasks + events.
+- **Notification prefs + email digests**: User `emailNotifications` + `notifPrefs` JSON; `GET/PATCH /notifications/preferences`; high-value notifs enqueue a 10-min delayed `notif-digest` job that emails only if still unread + opted-in (`DigestProcessor`). Frontend `NotificationPrefs` in Settings.
+- **Notification deep-links**: payloads carry `projectId`; bell items mark-read + navigate.
+- **Postgres FTS**: `fts` migration adds generated `searchVector` tsvector + GIN on tasks/notes (declared `Unsupported("tsvector")` to avoid drift); `SearchService` uses `websearch_to_tsquery`. Verified.
+- **Google `events.watch`** channel registered on connect (graceful) + **15-min poll** BullMQ repeatable (`gcal-poll`) → `pollAll`.
+- **Table view**: group-by (status/assignee/date), column-visibility menu (localStorage), row virtualization (`@tanstack/react-virtual`) for ungrouped lists.
+- **Dark-mode toggle** (`ThemeToggle`, persists, applied on boot), **clipboard-paste upload** (FilesSection), **12h timer reconcile** prompt (TimerPill).
+
+### Still intentionally deferred (minor/optional)
+- Assignee daily-load hint inline in the date/assignee picker.
+- Team-board cross-project drag (read-only; per-project boards have full drag).
+- Sentry, real virus scanner (playbook asked only for the stub — satisfied).
 
 ### Phase 10 deferred / notes
 - Existing feature components already used token utility classes (bg-surface/border/muted/primary), so the token swap restyled them globally; not every inline-styled control was migrated to the new primitives.

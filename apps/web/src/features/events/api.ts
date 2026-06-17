@@ -58,8 +58,10 @@ export function useUpdateEvent() {
 export function useDeleteEvent() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      await api.delete(`/events/${id}`);
+    mutationFn: async (arg: string | { id: string; scope: 'THIS' | 'THIS_AND_FOLLOWING' | 'ALL' }) => {
+      const id = typeof arg === 'string' ? arg : arg.id;
+      const scope = typeof arg === 'string' ? undefined : arg.scope;
+      await api.delete(`/events/${id}`, { params: scope ? { scope } : undefined });
     },
     onSuccess: () => invalidate(qc),
   });

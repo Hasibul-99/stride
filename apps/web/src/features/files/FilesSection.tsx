@@ -24,6 +24,10 @@ export function FilesSection({ taskId }: { taskId: string }) {
     handleFiles(e.dataTransfer.files);
   }
 
+  function onPaste(e: React.ClipboardEvent) {
+    if (e.clipboardData.files.length > 0) handleFiles(e.clipboardData.files);
+  }
+
   async function open(id: string) {
     const url = await getDownloadUrl(id);
     window.open(url, '_blank');
@@ -40,6 +44,8 @@ export function FilesSection({ taskId }: { taskId: string }) {
         }}
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
+        onPaste={onPaste}
+        tabIndex={0}
         className={`mb-3 block cursor-pointer rounded-control border border-dashed px-3 py-4 text-center text-sm text-muted ${
           dragging ? 'border-primary bg-primary/5' : 'border-border'
         }`}

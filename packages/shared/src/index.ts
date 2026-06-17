@@ -8,3 +8,4 @@ export * from './schemas/time.js';
 export * from './schemas/chat.js';
 export * from './schemas/file.js';
 export * from './schemas/note.js';
+export * from './schemas/notification.js';

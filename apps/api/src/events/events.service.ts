@@ -219,6 +219,26 @@ export class EventsService {
     await this.prisma.event.update({ where: { id: eventId }, data: { deletedAt: new Date() } });
   }
 
+  /** Delete a recurring event by scope: THIS, THIS_AND_FOLLOWING, or ALL occurrences. */
+  async removeRecurring(userId: string, eventId: string, scope: 'THIS' | 'THIS_AND_FOLLOWING' | 'ALL') {
+    const event = await this.loadAccessible(userId, eventId);
+    if (!event.recurrenceId || scope === 'THIS') {
+      return this.remove(userId, eventId);
+    }
+    const where: Prisma.EventWhereInput = { recurrenceId: event.recurrenceId, deletedAt: null };
+    if (scope === 'THIS_AND_FOLLOWING') {
+      where.startAt = { gte: event.startAt };
+    }
+    const affected = await this.prisma.event.findMany({ where, include: { participants: true } });
+    for (const e of affected) {
+      this.pushToGoogle(userId, e.projectId, e.id, 'delete');
+      for (const p of e.participants) {
+        if (p.userId) await this.reminders.cancel(e.id, p.userId);
+      }
+    }
+    await this.prisma.event.updateMany({ where, data: { deletedAt: new Date() } });
+  }
+
   async rsvp(input: RsvpInput) {
     const participantId = this.verifyRsvpToken(input.token);
     const participant = await this.prisma.eventParticipant.findUnique({
@@ -312,6 +332,27 @@ export class EventsService {
     const fireAt = new Date(event.startAt.getTime() - event.reminderMinutesBefore * 60_000);
     for (const p of event.participants) {
       if (p.userId) await this.reminders.schedule(eventId, p.userId, fireAt);
+    }
+  }
+
+  /** Re-materialize every active event recurrence 8 weeks ahead (nightly job). */
+  async rollingMaterialize() {
+    const recurrences = await this.prisma.recurrence.findMany({
+      where: { events: { some: { deletedAt: null } } },
+    });
+    for (const rec of recurrences) {
+      const base = await this.prisma.event.findFirst({
+        where: { recurrenceId: rec.id, deletedAt: null },
+        orderBy: { startAt: 'asc' },
+      });
+      if (!base) continue;
+      await this.materialize(base.id, {
+        frequency: rec.frequency,
+        interval: rec.interval,
+        byWeekdays: rec.byWeekdays,
+        until: rec.until ? rec.until.toISOString() : null,
+        count: rec.count,
+      });
     }
   }
 

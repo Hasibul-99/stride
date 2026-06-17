@@ -6,8 +6,11 @@ import { queryClient } from '@/lib/query-client';
 import { router } from '@/router';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Toaster } from '@/components/ui/Toaster';
+import { applyStoredTheme } from '@/components/ui/ThemeToggle';
 import '@/lib/api'; // initialize axios interceptors
 import '@/styles/index.css';
+
+applyStoredTheme();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

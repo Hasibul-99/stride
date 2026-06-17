@@ -19,6 +19,18 @@ export function TimerPill() {
 
   const elapsed = Math.floor((Date.now() - new Date(running.startedAt).getTime()) / 1000);
 
+  // Reconciliation prompt for a timer that's been running absurdly long (>12h).
+  if (elapsed > 12 * 3600) {
+    return (
+      <div className="flex items-center gap-2 rounded-full border border-warning/40 bg-warning-tint px-3 py-1 text-sm text-warning">
+        Timer running 12h+ on “{running.task.title}” —
+        <button onClick={() => stop.mutate(running.task.id)} className="font-medium underline">
+          stop &amp; keep
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-sm">
       <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />

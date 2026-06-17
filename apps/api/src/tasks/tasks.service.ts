@@ -6,11 +6,14 @@ import type {
   TaskQuery,
   UpdateTaskInput,
 } from '@teamboard/shared';
-import { SOCKET_EVENTS } from '@teamboard/shared';
+import { SOCKET_EVENTS, type RecurrenceInput, type RecurrenceScope } from '@teamboard/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { AccessService } from '../access/access.service';
 import { RealtimeEmitter } from '../realtime/realtime.emitter';
 import { NotificationsService } from '../notifications/notifications.service';
+import { generateOccurrences } from '../recurrence/recurrence.generator';
+
+const HORIZON_WEEKS = 8;
 
 /** 'YYYY-MM-DD' → Date at UTC midnight (matches @db.Date storage). */
 function dateOnlyToUtc(value: string): Date {
@@ -44,9 +47,10 @@ export class TasksService {
     actorId: string,
     taskId: string,
     title: string,
+    projectId: string,
   ) {
     if (assigneeId && assigneeId !== actorId) {
-      await this.notifications.create(assigneeId, 'TASK_ASSIGNED', { taskId, title });
+      await this.notifications.create(assigneeId, 'TASK_ASSIGNED', { taskId, title, projectId });
     }
   }
 
@@ -97,6 +101,14 @@ export class TasksService {
       orderBy: { position: 'desc' },
     });
 
+    let recurrenceId: string | null = null;
+    if (input.recurrence) {
+      if (!input.scheduledDate) {
+        throw new BadRequestException('A recurring task needs a scheduledDate');
+      }
+      recurrenceId = (await this.createRecurrence(input.recurrence)).id;
+    }
+
     const task = await this.prisma.task.create({
       data: {
         projectId,
@@ -108,11 +120,111 @@ export class TasksService {
         timeEstimateMinutes: input.timeEstimateMinutes ?? null,
         position: input.position ?? (last?.position ?? 0) + 1000,
         createdById: userId,
+        recurrenceId,
       },
     });
+    if (recurrenceId && input.recurrence) {
+      await this.materialize(task.id, input.recurrence);
+    }
     this.emitBoard(projectId);
-    await this.notifyAssignee(task.assigneeId, userId, task.id, task.title);
+    await this.notifyAssignee(task.assigneeId, userId, task.id, task.title, task.projectId);
     return this.serialize(task);
+  }
+
+  private async createRecurrence(rule: RecurrenceInput) {
+    return this.prisma.recurrence.create({
+      data: {
+        frequency: rule.frequency,
+        interval: rule.interval ?? 1,
+        byWeekdays: rule.byWeekdays ?? [],
+        until: rule.until ? new Date(rule.until) : null,
+        count: rule.count ?? null,
+      },
+    });
+  }
+
+  /** Materialize recurring task occurrences 8 weeks ahead. Idempotent by (recurrenceId, scheduledDate). */
+  async materialize(baseTaskId: string, rule: RecurrenceInput) {
+    const base = await this.prisma.task.findUnique({ where: { id: baseTaskId } });
+    if (!base || !base.recurrenceId || !base.scheduledDate) return;
+
+    const horizon = new Date(Date.now() + HORIZON_WEEKS * 7 * 86400000);
+    const occurrences = generateOccurrences(
+      {
+        frequency: rule.frequency,
+        interval: rule.interval ?? 1,
+        byWeekdays: rule.byWeekdays ?? [],
+        until: rule.until ? new Date(rule.until) : null,
+        count: rule.count ?? null,
+      },
+      base.scheduledDate,
+      horizon,
+    );
+
+    const existing = await this.prisma.task.findMany({
+      where: { recurrenceId: base.recurrenceId, deletedAt: null },
+      select: { scheduledDate: true },
+    });
+    const existingDays = new Set(
+      existing.map((t) => (t.scheduledDate ? utcToDateOnly(t.scheduledDate) : '')),
+    );
+
+    for (const occ of occurrences) {
+      const iso = utcToDateOnly(occ);
+      if (existingDays.has(iso)) continue;
+      await this.prisma.task.create({
+        data: {
+          projectId: base.projectId,
+          title: base.title,
+          description: base.description ?? undefined,
+          statusId: base.statusId,
+          assigneeId: base.assigneeId,
+          scheduledDate: dateOnlyToUtc(iso),
+          timeEstimateMinutes: base.timeEstimateMinutes,
+          position: base.position,
+          createdById: base.createdById,
+          recurrenceId: base.recurrenceId,
+        },
+      });
+    }
+    this.emitBoard(base.projectId);
+  }
+
+  /** Re-materialize every active task recurrence 8 weeks ahead (nightly job). */
+  async rollingMaterialize() {
+    const recurrences = await this.prisma.recurrence.findMany({
+      where: { tasks: { some: { deletedAt: null } } },
+    });
+    for (const rec of recurrences) {
+      const base = await this.prisma.task.findFirst({
+        where: { recurrenceId: rec.id, deletedAt: null },
+        orderBy: { scheduledDate: 'asc' },
+      });
+      if (!base) continue;
+      await this.materialize(base.id, {
+        frequency: rec.frequency,
+        interval: rec.interval,
+        byWeekdays: rec.byWeekdays,
+        until: rec.until ? rec.until.toISOString() : null,
+        count: rec.count,
+      });
+    }
+  }
+
+  /** Delete a recurring task by scope: THIS occurrence, THIS_AND_FOLLOWING, or ALL. */
+  async removeRecurring(userId: string, taskId: string, scope: RecurrenceScope) {
+    const task = await this.loadAccessible(userId, taskId);
+    if (!task.recurrenceId || scope === 'THIS') {
+      return this.remove(userId, taskId);
+    }
+    const where: Prisma.TaskWhereInput = { recurrenceId: task.recurrenceId, deletedAt: null };
+    if (scope === 'THIS_AND_FOLLOWING' && task.scheduledDate) {
+      where.scheduledDate = { gte: task.scheduledDate };
+    }
+    // Never alter completed occurrences.
+    where.completedAt = null;
+    await this.prisma.task.updateMany({ where, data: { deletedAt: new Date() } });
+    this.emitBoard(task.projectId);
   }
 
   async update(userId: string, taskId: string, input: UpdateTaskInput) {
@@ -161,7 +273,7 @@ export class TasksService {
     const updated = await this.prisma.task.update({ where: { id: taskId }, data });
     this.emitBoard(updated.projectId);
     if (input.assigneeId !== undefined && input.assigneeId && input.assigneeId !== task.assigneeId) {
-      await this.notifyAssignee(input.assigneeId, userId, updated.id, updated.title);
+      await this.notifyAssignee(input.assigneeId, userId, updated.id, updated.title, updated.projectId);
     }
     return this.serialize(updated);
   }

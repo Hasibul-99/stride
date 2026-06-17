@@ -1,6 +1,8 @@
-import { Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { updateNotifPrefsSchema, type UpdateNotifPrefsInput } from '@teamboard/shared';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { ZodBody } from '../common/pipes/zod-body.decorator';
 import { NotificationsService } from './notifications.service';
 
 @ApiTags('notifications')
@@ -17,6 +19,19 @@ export class NotificationsController {
   @Get('unread-count')
   unread(@CurrentUser('id') userId: string) {
     return this.svc.unreadCount(userId).then((count) => ({ count }));
+  }
+
+  @Get('preferences')
+  getPrefs(@CurrentUser('id') userId: string) {
+    return this.svc.getPrefs(userId);
+  }
+
+  @Patch('preferences')
+  updatePrefs(
+    @CurrentUser('id') userId: string,
+    @ZodBody(updateNotifPrefsSchema) body: UpdateNotifPrefsInput,
+  ) {
+    return this.svc.updatePrefs(userId, body);
   }
 
   @Post('read-all')

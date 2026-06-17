@@ -20,6 +20,7 @@ export interface Task {
   position: number;
   timeEstimateMinutes: number | null;
   completedAt: string | null;
+  recurrenceId: string | null;
 }
 
 export interface TaskStatus {
@@ -91,8 +92,10 @@ export function useUpdateTask(projectId: string) {
 export function useDeleteTask(projectId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      await api.delete(`/tasks/${id}`);
+    mutationFn: async (arg: string | { id: string; scope: 'THIS' | 'THIS_AND_FOLLOWING' | 'ALL' }) => {
+      const id = typeof arg === 'string' ? arg : arg.id;
+      const scope = typeof arg === 'string' ? undefined : arg.scope;
+      await api.delete(`/tasks/${id}`, { params: scope ? { scope } : undefined });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: tasksKey(projectId) }),
   });

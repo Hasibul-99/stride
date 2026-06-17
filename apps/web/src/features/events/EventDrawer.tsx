@@ -30,7 +30,14 @@ export function EventDrawer({ event, onClose }: { event: CalEvent; onClose: () =
               ) {
                 return;
               }
-              await del.mutateAsync(event.id);
+              if (event.recurrenceId) {
+                const all = window.confirm(
+                  'Recurring event. OK = delete ALL occurrences, Cancel = just this one.',
+                );
+                await del.mutateAsync({ id: event.id, scope: all ? 'ALL' : 'THIS' });
+              } else {
+                await del.mutateAsync(event.id);
+              }
               onClose();
             }}
             className="text-sm text-red-600"

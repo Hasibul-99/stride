@@ -64,7 +64,11 @@ export class TasksController {
   }
 
   @Delete('tasks/:id')
-  remove(@CurrentUser('id') userId: string, @Param('id') id: string) {
-    return this.svc.remove(userId, id);
+  remove(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Query('scope') scope?: 'THIS' | 'THIS_AND_FOLLOWING' | 'ALL',
+  ) {
+    return this.svc.removeRecurring(userId, id, scope ?? 'THIS');
   }
 }

@@ -1,5 +1,13 @@
 import { z } from 'zod';
 import { PROJECT_COLORS } from '../constants.js';
+import { recurrenceSchema } from './event.js';
+
+/** Scope for editing/deleting a recurring occurrence. */
+export const RECURRENCE_EDIT_SCOPES = ['THIS', 'THIS_AND_FOLLOWING', 'ALL'] as const;
+export const recurrenceScopeSchema = z.object({
+  scope: z.enum(RECURRENCE_EDIT_SCOPES).default('THIS'),
+});
+export type RecurrenceScope = (typeof RECURRENCE_EDIT_SCOPES)[number];
 
 // TipTap rich-text document is stored as opaque JSON.
 const richTextJson = z.unknown();
@@ -20,6 +28,7 @@ export const createTaskSchema = z.object({
   scheduledDate: dateOnly.optional(),
   timeEstimateMinutes: z.number().int().min(0).nullable().optional(),
   position: z.number().optional(),
+  recurrence: recurrenceSchema.nullable().optional(),
 });
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 

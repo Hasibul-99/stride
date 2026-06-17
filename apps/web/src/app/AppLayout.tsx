@@ -4,6 +4,7 @@ import { Sidebar } from '@/features/workspaces/Sidebar';
 import { TimerPill } from '@/features/time/TimerPill';
 import { NotificationBell } from '@/features/notifications/NotificationBell';
 import { SearchPalette } from '@/features/search/SearchPalette';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { connectSocket, disconnectSocket } from '@/lib/socket';
 
 export function AppLayout() {
@@ -25,6 +26,7 @@ export function AppLayout() {
           </button>
           <div className="ml-auto flex items-center gap-3">
             <TimerPill />
+            <ThemeToggle />
             <NotificationBell />
           </div>
         </header>

@@ -62,6 +62,41 @@ export class GoogleCalendarService {
       },
     });
     await this.importInitial(userId);
+    await this.watch(userId);
+  }
+
+  /** Register a Google push-notification channel so changes hit our webhook. No-op if callback URL is not public. */
+  async watch(userId: string): Promise<void> {
+    const ctx = await this.calendarFor(userId);
+    if (!ctx) return;
+    const base = this.config.get<string>('GOOGLE_CALLBACK_URL');
+    if (!base) return;
+    const address = base.replace(/\/integrations\/google\/callback$/, '/integrations/google/webhook');
+    const channelId = `tb-${userId}-${Date.now()}`;
+    try {
+      const res = await ctx.cal.events.watch({
+        calendarId: 'primary',
+        requestBody: { id: channelId, type: 'web_hook', address },
+      });
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { gcalChannelId: channelId, gcalResourceId: res.data.resourceId ?? null },
+      });
+    } catch (err) {
+      // Local/non-public callback URLs can't receive push — fall back to polling.
+      this.logger.warn(`events.watch failed (will rely on polling): ${String(err)}`);
+    }
+  }
+
+  /** Poll every connected user's calendar — fallback when push channels aren't available. */
+  async pollAll(): Promise<void> {
+    const users = await this.prisma.user.findMany({
+      where: { gcalConnectedAt: { not: null } },
+      select: { id: true },
+    });
+    for (const u of users) {
+      await this.syncIncremental(u.id).catch(() => undefined);
+    }
   }
 
   async status(userId: string) {

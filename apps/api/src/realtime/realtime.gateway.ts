@@ -104,6 +104,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection {
   ) {
     const userId = client.data.userId;
     if (!userId) return { ok: false };
+    const projectId = await this.chat.assertAccess(userId, body.taskId);
     const msg = await this.chat.send(userId, body.taskId, body.body);
     this.emitter.emitTask(body.taskId, SOCKET_EVENTS.chatNew, msg);
 
@@ -112,6 +113,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection {
       if (mentionedId !== userId) {
         await this.notifications.create(mentionedId, 'MENTION', {
           taskId: body.taskId,
+          projectId,
           messageId: msg.id,
           from: msg.author.name,
         });
