@@ -1,5 +1,7 @@
 export * from './constants.js';
 export * from './duration.js';
+export * from './recurrence-summary.js';
+export * from './workload.js';
 export * from './schemas/auth.js';
 export * from './schemas/workspace.js';
 export * from './schemas/task.js';

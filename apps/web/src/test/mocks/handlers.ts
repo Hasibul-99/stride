@@ -50,4 +50,7 @@ export const handlers = [
   http.get('*/api/projects/:id/tasks', () =>
     HttpResponse.json([makeTask({ id: 'task_0001', statusId: 'status_new' })]),
   ),
+
+  // No timer running by default; TimerPill tests override with server.use(...).
+  http.get('*/api/time/running', () => HttpResponse.json(null)),
 ];

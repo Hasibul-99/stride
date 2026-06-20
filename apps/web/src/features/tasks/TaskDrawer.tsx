@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { formatMinutes, parseDurationToMinutes } from '@teamboard/shared';
+import { formatMinutes } from '@teamboard/shared';
 import { COLOR_HEX } from '@/features/workspaces/colors';
 import { TimerButton } from '@/features/time/TimerButton';
 import { formatElapsed, useDeleteTimeEntry, useTaskTime } from '@/features/time/api';
 import { ChatPanel } from '@/features/chat/ChatPanel';
 import { FilesSection } from '@/features/files/FilesSection';
+import { StatusSelect } from './StatusSelect';
+import { TimeEstimateInput } from './TimeEstimateInput';
 import {
   useDeleteTask,
   useProjectMembers,
@@ -27,22 +29,15 @@ export function TaskDrawer({ projectId, task, onClose }: Props) {
   const del = useDeleteTask(projectId);
 
   const [title, setTitle] = useState(task.title);
-  const [estimate, setEstimate] = useState(formatMinutes(task.timeEstimateMinutes));
 
   useEffect(() => {
     setTitle(task.title);
-    setEstimate(formatMinutes(task.timeEstimateMinutes));
   }, [task]);
 
   function saveTitle() {
     if (title.trim() && title !== task.title) {
       update.mutate({ id: task.id, title: title.trim() });
     }
-  }
-
-  function saveEstimate() {
-    const minutes = estimate.trim() ? parseDurationToMinutes(estimate) : null;
-    update.mutate({ id: task.id, timeEstimateMinutes: minutes });
   }
 
   return (
@@ -83,18 +78,11 @@ export function TaskDrawer({ projectId, task, onClose }: Props) {
         />
 
         <Field label="Status">
-          <select
+          <StatusSelect
+            statuses={statuses ?? []}
             value={task.statusId}
-            onChange={(e) => update.mutate({ id: task.id, statusId: e.target.value })}
-            className="w-full rounded-control border border-border bg-surface px-3 py-2 outline-none focus:border-primary"
-          >
-            {statuses?.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-                {s.isCompleted ? ' ✓' : ''}
-              </option>
-            ))}
-          </select>
+            onChange={(statusId) => update.mutate({ id: task.id, statusId })}
+          />
         </Field>
 
         <Field label="Assignee">
@@ -136,12 +124,9 @@ export function TaskDrawer({ projectId, task, onClose }: Props) {
         </Field>
 
         <Field label="Time estimate">
-          <input
-            value={estimate}
-            onChange={(e) => setEstimate(e.target.value)}
-            onBlur={saveEstimate}
-            placeholder="e.g. 1h 30m"
-            className="w-full rounded-control border border-border bg-surface px-3 py-2 outline-none focus:border-primary"
+          <TimeEstimateInput
+            minutes={task.timeEstimateMinutes}
+            onCommit={(minutes) => update.mutate({ id: task.id, timeEstimateMinutes: minutes })}
           />
         </Field>
 

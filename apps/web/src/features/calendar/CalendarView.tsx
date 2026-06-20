@@ -1,10 +1,5 @@
 import { useMemo, useState } from 'react';
-import {
-  formatMinutes,
-  WORKLOAD_AMBER_MINUTES,
-  WORKLOAD_RED_MINUTES,
-  type ProjectColor,
-} from '@teamboard/shared';
+import { type ProjectColor } from '@teamboard/shared';
 import {
   useBulkPositions,
   useCreateTask,
@@ -21,6 +16,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { useEvents, type CalEvent } from '@/features/events/api';
 import { EventModal } from '@/features/events/EventModal';
 import { EventDrawer } from '@/features/events/EventDrawer';
+import { WorkloadFooter } from './WorkloadFooter';
 import { format } from 'date-fns';
 import { COLOR_HEX } from '@/features/workspaces/colors';
 import { buildWeek, rangeOf, shiftWeeks, weekStart } from './week';
@@ -98,11 +94,6 @@ export function CalendarView({ projectId, projectColor }: { projectId: string; p
   const dayContainers: BoardContainer[] = week.map((d) => {
     const dayTasks = itemsByContainer[d.iso] ?? [];
     const dayEvents = eventsByDay[d.iso] ?? [];
-    const eventMin = dayEvents.reduce(
-      (s, e) => s + (new Date(e.endAt).getTime() - new Date(e.startAt).getTime()) / 60000,
-      0,
-    );
-    const load = dayTasks.reduce((s, t) => s + (t.timeEstimateMinutes ?? 0), 0) + eventMin;
     return {
       id: d.iso,
       className: 'flex w-[260px] shrink-0 flex-col rounded-card border border-border bg-surface',
@@ -117,7 +108,7 @@ export function CalendarView({ projectId, projectColor }: { projectId: string; p
             <span className="text-sm font-medium">
               {d.label} <span className="text-muted">{d.dayNum}</span>
             </span>
-            <WorkloadBadge minutes={load} />
+            <WorkloadFooter tasks={dayTasks} events={dayEvents} />
           </div>
           {dayEvents.length > 0 && (
             <div className="space-y-1 px-2 pt-2">
@@ -227,17 +218,6 @@ export function CalendarView({ projectId, projectColor }: { projectId: string; p
       )}
     </div>
   );
-}
-
-function WorkloadBadge({ minutes }: { minutes: number }) {
-  if (minutes <= 0) return null;
-  const color =
-    minutes > WORKLOAD_RED_MINUTES
-      ? 'text-red-600'
-      : minutes > WORKLOAD_AMBER_MINUTES
-        ? 'text-amber-600'
-        : 'text-muted';
-  return <span className={cn('text-xs', color)}>{formatMinutes(minutes)}</span>;
 }
 
 function QuickAdd({ projectId, scheduledDate }: { projectId: string; scheduledDate: string | null }) {

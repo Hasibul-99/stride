@@ -18,24 +18,32 @@ export function TaskCard({ task, status, assignee, projectColor, onClick }: Prop
 
   return (
     <div
-      onClick={onClick}
-      role="button"
-      tabIndex={0}
       className={cn(
-        'group relative flex w-full cursor-pointer flex-col gap-2 rounded-card border border-border bg-surface p-2.5 pl-3 text-left shadow-sm transition hover:-translate-y-px hover:border-border-strong hover:shadow-md',
+        'group relative flex w-full flex-col gap-2 rounded-card border border-border bg-surface p-2.5 pl-3 text-left shadow-sm transition hover:border-border-strong hover:shadow-md',
         completed && 'opacity-[0.55]',
       )}
     >
       <span
+        aria-hidden
         className="absolute inset-y-0 left-0 w-[3px] rounded-l-card"
         style={{ background: COLOR_HEX[projectColor] }}
       />
-      <span className={cn('line-clamp-2 text-[13px] leading-snug', completed && 'line-through')}>
+      {/* Stretched button: opens the task; its ::after covers the whole card. */}
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          'line-clamp-2 text-left text-[13px] leading-snug outline-none after:absolute after:inset-0 after:content-[""]',
+          completed && 'line-through',
+        )}
+      >
         {task.title}
-      </span>
-      <div className="flex items-center gap-2">
+      </button>
+      <div className="relative z-10 flex items-center gap-2">
         {completed ? (
-          <span className="text-success" title="Completed">✓</span>
+          <span className="text-success" title="Completed" aria-label="Completed">
+            ✓
+          </span>
         ) : (
           status && (
             <span

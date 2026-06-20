@@ -14,6 +14,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     css: false,
+    // Deterministic timezone for date-sensitive tests (override per-test with pinTimezone).
+    env: { TZ: 'America/New_York' },
     // Unit/integration tests live in src; Playwright specs live in tests-e2e.
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     exclude: ['node_modules', 'dist', 'tests-e2e', 'e2e'],
