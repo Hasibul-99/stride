@@ -2,6 +2,8 @@
 
 A Bordio-style work management platform for result-driven teams. Weekly calendar planner, kanban + table views, meetings with ICS invites, time tracking, task chat, and more.
 
+👉 **New here? Read the [User Guide](USER_GUIDE.md)** — how to run it and how to use every feature.
+
 ## Stack
 - **Web:** React 18 + Vite + TypeScript + Tailwind CSS
 - **API:** NestJS 10 + Prisma + PostgreSQL
