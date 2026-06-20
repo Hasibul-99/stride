@@ -284,6 +284,8 @@ function Toolbar(p: ToolbarProps) {
           {p.members?.slice(0, 6).map((m) => (
             <button
               key={m.user.id}
+              aria-label={`Filter by ${m.user.name}`}
+              aria-pressed={p.assigneeFilter === m.user.id}
               onClick={() => p.onAssignee(p.assigneeFilter === m.user.id ? '' : m.user.id)}
               className={cn(
                 'rounded-full',

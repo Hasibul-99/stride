@@ -38,5 +38,6 @@ export const SOCKET_EVENTS = {
   chatDeleted: 'chat:deleted',
   typingPing: 'chat:typing-ping',
   boardChanged: 'board:changed',
+  taskMoved: 'task:moved',
   notificationNew: 'notification:new',
 } as const;

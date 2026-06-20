@@ -51,6 +51,30 @@ export const handlers = [
     HttpResponse.json([makeTask({ id: 'task_0001', statusId: 'status_new' })]),
   ),
 
+  http.get('*/api/projects/:id/members', () =>
+    HttpResponse.json([
+      { id: 'pm1', role: 'MANAGER', user: makeUser({ id: 'u_alice', name: 'Alice Chen' }) },
+      { id: 'pm2', role: 'MEMBER', user: makeUser({ id: 'u_bob', name: 'Bob Martins' }) },
+    ]),
+  ),
+
   // No timer running by default; TimerPill tests override with server.use(...).
   http.get('*/api/time/running', () => HttpResponse.json(null)),
+
+  // Task sub-resources (drawer panels) — empty defaults; override per test.
+  http.get('*/api/tasks/:id/time', () => HttpResponse.json({ entries: [], totalSeconds: 0 })),
+  http.get('*/api/tasks/:id/files', () => HttpResponse.json([])),
+  http.get('*/api/tasks/:id/chat', () => HttpResponse.json({ messages: [], nextCursor: null })),
+  http.get('*/api/tasks/:id/chat/unread', () => HttpResponse.json({ count: 0 })),
+  http.post('*/api/tasks/:id/chat/read', () => HttpResponse.json({ read: 0 })),
+
+  // Generic task PATCH echo (override per test to assert payloads / force errors).
+  http.patch('*/api/tasks/:id', async ({ request, params }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    return HttpResponse.json({ id: params.id, ...body });
+  }),
+
+  // Notifications defaults.
+  http.get('*/api/notifications/unread-count', () => HttpResponse.json({ count: 0 })),
+  http.get('*/api/notifications', () => HttpResponse.json({ items: [], nextCursor: null })),
 ];

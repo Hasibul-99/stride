@@ -1,6 +1,15 @@
 import { io, type Socket } from 'socket.io-client';
 import { useAuthStore } from '@/store/auth.store';
 
+/**
+ * Stable id for this tab. Mutations stamp realtime events with it so the
+ * client can ignore echoes of its own changes (no double-apply).
+ */
+export const clientId =
+  typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
+
 let socket: Socket | null = null;
 
 /** Connect (or reconnect) the singleton socket using the in-memory access token. */

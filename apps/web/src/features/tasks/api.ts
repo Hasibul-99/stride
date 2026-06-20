@@ -85,7 +85,19 @@ export function useUpdateTask(projectId: string) {
   return useMutation({
     mutationFn: async ({ id, ...input }: UpdateTaskInput & { id: string }) =>
       (await api.patch<Task>(`/tasks/${id}`, input)).data,
-    onSuccess: () => qc.invalidateQueries({ queryKey: tasksKey(projectId) }),
+    // Optimistically patch every cached task list for this project; roll back on error.
+    onMutate: async ({ id, ...patch }) => {
+      await qc.cancelQueries({ queryKey: tasksKey(projectId) });
+      const snapshot = qc.getQueriesData<Task[]>({ queryKey: tasksKey(projectId) });
+      qc.setQueriesData<Task[]>({ queryKey: tasksKey(projectId) }, (old) =>
+        old?.map((t) => (t.id === id ? { ...t, ...(patch as Partial<Task>) } : t)),
+      );
+      return { snapshot };
+    },
+    onError: (_err, _vars, ctx) => {
+      ctx?.snapshot?.forEach(([key, data]) => qc.setQueryData(key, data));
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: tasksKey(projectId) }),
   });
 }
 

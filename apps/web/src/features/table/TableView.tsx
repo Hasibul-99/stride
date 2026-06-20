@@ -118,6 +118,7 @@ export function TableView({ projectId }: { projectId: string }) {
           Completed
         </label>
         <select
+          aria-label="Group by"
           value={groupBy}
           onChange={(e) => setGroupBy(e.target.value as GroupBy)}
           className="rounded-control border border-border bg-surface px-2 py-1 text-sm"
@@ -147,6 +148,7 @@ export function TableView({ projectId }: { projectId: string }) {
           <div className="ml-auto flex items-center gap-2 text-sm">
             <span className="text-muted">{selected.size} selected</span>
             <select
+              aria-label="Bulk set status"
               defaultValue=""
               onChange={(e) => e.target.value && bulkStatus(e.target.value)}
               className="rounded-control border border-border bg-surface px-2 py-1"
@@ -181,14 +183,19 @@ export function TableView({ projectId }: { projectId: string }) {
                 </GroupBlock>
               ))}
             </tbody>
-          ) : (
+          ) : rows.length > VIRTUALIZE_THRESHOLD ? (
             <VirtualBody rows={rows} renderRow={renderRow} colSpan={cols.length + 1} />
+          ) : (
+            <tbody>{rows.map(renderRow)}</tbody>
           )}
         </table>
       </div>
     </div>
   );
 }
+
+// Below this row count, plain rendering is cheaper than virtualization.
+const VIRTUALIZE_THRESHOLD = 50;
 
 /** Virtualized tbody for large ungrouped lists. */
 function VirtualBody({ rows, renderRow, colSpan }: { rows: Task[]; renderRow: (t: Task) => React.ReactNode; colSpan: number }) {

@@ -70,6 +70,7 @@ export function TaskDrawer({ projectId, task, onClose }: Props) {
         </div>
 
         <textarea
+          aria-label="Task title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onBlur={saveTitle}
@@ -87,6 +88,7 @@ export function TaskDrawer({ projectId, task, onClose }: Props) {
 
         <Field label="Assignee">
           <select
+            aria-label="Assignee"
             value={task.assigneeId ?? ''}
             onChange={(e) =>
               update.mutate({ id: task.id, assigneeId: e.target.value || null })

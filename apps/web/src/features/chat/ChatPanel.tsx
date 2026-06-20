@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { SOCKET_EVENTS } from '@teamboard/shared';
 import { connectSocket } from '@/lib/socket';
 import { Avatar } from '@/components/ui/Avatar';
+import { useAuthStore } from '@/store/auth.store';
 import { useChatHistory, useMarkChatRead, type ChatMessage } from './api';
 
 export function ChatPanel({ taskId }: { taskId: string }) {
@@ -13,9 +14,14 @@ export function ChatPanel({ taskId }: { taskId: string }) {
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Seed from REST history.
+  // Merge REST history in without clobbering live socket/optimistic messages.
   useEffect(() => {
-    if (data?.messages) setMessages(data.messages);
+    if (!data?.messages) return;
+    setMessages((prev) => {
+      const byId = new Map(data.messages.map((m) => [m.id, m]));
+      for (const m of prev) if (!byId.has(m.id)) byId.set(m.id, m);
+      return [...byId.values()].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    });
   }, [data]);
 
   useEffect(() => {
@@ -26,7 +32,13 @@ export function ChatPanel({ taskId }: { taskId: string }) {
 
     const onNew = (m: ChatMessage) => {
       if (m.taskId !== taskId) return;
-      setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
+      setMessages((prev) => {
+        // Drop the optimistic placeholder this echo replaces.
+        const withoutTemp = prev.filter(
+          (x) => !(x.id.startsWith('temp-') && x.body === m.body && x.authorId === m.authorId),
+        );
+        return withoutTemp.some((x) => x.id === m.id) ? withoutTemp : [...withoutTemp, m];
+      });
     };
     const onUpdated = (m: ChatMessage) =>
       setMessages((prev) => prev.map((x) => (x.id === m.id ? m : x)));
@@ -68,6 +80,18 @@ export function ChatPanel({ taskId }: { taskId: string }) {
   function send() {
     const body = draft.trim();
     if (!body) return;
+    const me = useAuthStore.getState().user;
+    // Optimistic placeholder; reconciled when the server's chat:new echoes back.
+    const temp: ChatMessage = {
+      id: `temp-${Date.now()}`,
+      taskId,
+      authorId: me?.id ?? 'me',
+      body,
+      editedAt: null,
+      createdAt: new Date().toISOString(),
+      author: { id: me?.id ?? 'me', name: me?.name ?? 'You', avatarUrl: me?.avatarUrl ?? null },
+    };
+    setMessages((prev) => [...prev, temp]);
     connectSocket().emit(SOCKET_EVENTS.chatSend, { taskId, body, mentions: [] });
     setDraft('');
   }
