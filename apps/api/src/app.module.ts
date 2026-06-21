@@ -41,7 +41,11 @@ function redisConnection() {
     }),
     JwtModule.register({ global: true }),
     BullModule.forRoot({ connection: redisConnection() }),
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
+    ThrottlerModule.forRoot({
+      throttlers: [{ ttl: 60_000, limit: 100 }],
+      // Disable rate limiting outside production (E2E/dev burst from one IP).
+      skipIf: () => process.env.NODE_ENV !== 'production',
+    }),
     PrismaModule,
     AccessModule,
     MailModule,

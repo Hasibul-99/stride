@@ -43,6 +43,13 @@ export function SearchPalette() {
     setOpen(false);
   }
 
+  // Enter opens the first result (tasks first, then notes).
+  function onKeyDown(e: React.KeyboardEvent) {
+    if (e.key !== 'Enter') return;
+    const first = data?.tasks[0] ?? data?.notes[0];
+    if (first) go(first.projectId);
+  }
+
   return (
     <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/30 p-4 pt-[15vh]" onClick={() => setOpen(false)}>
       <div className="w-full max-w-lg overflow-hidden rounded-modal border border-border bg-surface shadow-xl" onClick={(e) => e.stopPropagation()}>
@@ -50,6 +57,7 @@ export function SearchPalette() {
           ref={inputRef}
           value={q}
           onChange={(e) => setQ(e.target.value)}
+          onKeyDown={onKeyDown}
           placeholder="Search tasks and notes…"
           className="w-full border-b border-border bg-surface px-4 py-3 outline-none"
         />

@@ -10,6 +10,7 @@ coverage/
 backups/
 test-results/
 playwright-report/
+apps/web/tests-e2e/.auth/
 .DS_Store
 .vscode/
 .idea/

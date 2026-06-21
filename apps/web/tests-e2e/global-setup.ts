@@ -1,34 +1,23 @@
+import { execSync } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { FullConfig } from '@playwright/test';
 
-const API = process.env.E2E_API_URL ?? 'http://localhost:3000/api';
-
-/** Known account E2E specs can rely on. */
-export const E2E_USER = {
-  email: 'e2e@teamboard.local',
-  password: 'password123',
-  name: 'E2E User',
-};
+const here = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(here, '../../..');
 
 /**
- * Seed a known database state via the API before the suite runs.
- * Best-effort: if the API isn't reachable, log and continue so UI-only specs
- * (e.g. the signin form smoke test) still run.
+ * Reset + seed the database to a known state before the E2E run.
+ * Uses the API package's idempotent seed (wipes, then reseeds demo data:
+ * alice/bob/carol, projects, statuses, ~25 tasks this week, events, notes).
+ * Best-effort: if the DB isn't reachable, log and continue so UI-only specs
+ * (smoke) still run; the @e2e journeys require the full stack.
  */
 export default async function globalSetup(_config: FullConfig) {
   try {
-    const res = await fetch(`${API}/auth/signup`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(E2E_USER),
-    });
-    if (res.ok) {
-      console.log(`[e2e] seeded user ${E2E_USER.email}`);
-    } else if (res.status === 409) {
-      console.log(`[e2e] user ${E2E_USER.email} already exists`);
-    } else {
-      console.warn(`[e2e] seed returned ${res.status}`);
-    }
+    execSync('pnpm --filter @teamboard/api db:seed', { cwd: repoRoot, stdio: 'inherit' });
+    console.log('[e2e] database reset + seeded');
   } catch (err) {
-    console.warn(`[e2e] API not reachable for seeding (${String(err)}). UI-only specs will still run.`);
+    console.warn(`[e2e] db:seed failed (DB down?). Journey specs will fail. ${String(err)}`);
   }
 }

@@ -125,6 +125,18 @@ export function CalendarView({ projectId, projectColor }: { projectId: string; p
     };
   });
 
+  const waitingContainer: BoardContainer = {
+    id: WAITING,
+    className: 'flex w-[280px] shrink-0 flex-col rounded-card border border-border bg-background/60',
+    header: (
+      <div className="flex items-center justify-between border-b border-border px-3 py-2">
+        <span className="text-sm font-medium">Waiting list</span>
+        <span className="text-xs text-muted">{itemsByContainer[WAITING]?.length ?? 0}</span>
+      </div>
+    ),
+    footer: <QuickAdd projectId={projectId} scheduledDate={null} />,
+  };
+
   return (
     <div className="flex h-full flex-col">
       <Toolbar
@@ -143,38 +155,11 @@ export function CalendarView({ projectId, projectColor }: { projectId: string; p
         onNewEvent={() => setEventModalDate(week[0].iso)}
       />
 
-      <div className="flex flex-1 gap-3 overflow-hidden">
+      {/* One SortableBoard (single dnd context) so cards can move day↔waiting list. */}
+      <div className="flex flex-1 overflow-hidden">
         <SortableBoard
           className="flex flex-1 gap-3 overflow-x-auto pb-2"
-          containers={dayContainers}
-          itemsByContainer={itemsByContainer}
-          onDrop={onDrop}
-          renderItem={(t) => (
-            <TaskCard
-              task={t}
-              status={statusById.get(t.statusId)}
-              assignee={members?.find((m) => m.user.id === t.assigneeId)}
-              projectColor={projectColor}
-              onClick={() => setOpenTask(t)}
-            />
-          )}
-        />
-
-        <SortableBoard
-          className="flex w-[280px] shrink-0 flex-col"
-          containers={[
-            {
-              id: WAITING,
-              className: 'flex flex-1 flex-col rounded-card border border-border bg-background/60',
-              header: (
-                <div className="flex items-center justify-between border-b border-border px-3 py-2">
-                  <span className="text-sm font-medium">Waiting list</span>
-                  <span className="text-xs text-muted">{itemsByContainer[WAITING]?.length ?? 0}</span>
-                </div>
-              ),
-              footer: <QuickAdd projectId={projectId} scheduledDate={null} />,
-            },
-          ]}
+          containers={[...dayContainers, waitingContainer]}
           itemsByContainer={itemsByContainer}
           onDrop={onDrop}
           renderItem={(t) => (
