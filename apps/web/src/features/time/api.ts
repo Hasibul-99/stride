@@ -19,7 +19,11 @@ export interface RunningTimer extends TimeEntry {
 export function useRunningTimer() {
   return useQuery({
     queryKey: ['time-running'],
-    queryFn: async () => (await api.get<RunningTimer | null>('/time/running')).data,
+    queryFn: async () => {
+      const { data } = await api.get<RunningTimer | null>('/time/running');
+      // Normalize: only a fully-shaped running entry counts (guards empty/null bodies).
+      return data && data.task ? data : null;
+    },
     refetchInterval: 30_000,
   });
 }

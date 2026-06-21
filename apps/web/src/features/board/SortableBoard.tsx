@@ -163,7 +163,11 @@ export function SortableBoard<T extends Item>({
 function Container({ id, className, children }: { id: string; className?: string; children: ReactNode }) {
   const { setNodeRef, isOver } = useDroppable({ id });
   return (
-    <div ref={setNodeRef} className={cn(className, isOver && 'ring-2 ring-primary/40')}>
+    <div
+      ref={setNodeRef}
+      data-droppable-id={id}
+      className={cn(className, isOver && 'ring-2 ring-primary/40')}
+    >
       {children}
     </div>
   );
@@ -174,6 +178,7 @@ function SortableItem({ id, children }: { id: string; children: ReactNode }) {
   return (
     <div
       ref={setNodeRef}
+      data-draggable-id={id}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(isDragging && 'opacity-40')}
       {...attributes}

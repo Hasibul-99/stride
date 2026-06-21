@@ -10,8 +10,8 @@ import {
 } from '@/features/tasks/api';
 import { TaskCard } from '@/features/tasks/TaskCard';
 import { TaskDrawer } from '@/features/tasks/TaskDrawer';
-import { positionForIndex } from '@/features/tasks/positions';
 import { SortableBoard, type BoardContainer } from '@/features/board/SortableBoard';
+import { calendarMovePayload, WAITING } from './drop';
 import { Avatar } from '@/components/ui/Avatar';
 import { useEvents, type CalEvent } from '@/features/events/api';
 import { EventModal } from '@/features/events/EventModal';
@@ -21,8 +21,6 @@ import { format } from 'date-fns';
 import { COLOR_HEX } from '@/features/workspaces/colors';
 import { buildWeek, rangeOf, shiftWeeks, weekStart } from './week';
 import { cn } from '@/lib/utils';
-
-const WAITING = 'waiting';
 
 export function CalendarView({ projectId, projectColor }: { projectId: string; projectColor: ProjectColor }) {
   const { data: tasks } = useTasks(projectId);
@@ -76,14 +74,9 @@ export function CalendarView({ projectId, projectColor }: { projectId: string; p
   function onDrop(taskId: string, toContainer: string, toIndex: number) {
     const task = tasks?.find((t) => t.id === taskId);
     if (!task) return;
-    const scheduledDate = toContainer === WAITING ? null : toContainer;
-
     const dest = (itemsByContainer[toContainer] ?? []).filter((t) => t.id !== taskId);
-    const position = positionForIndex(dest.map((t) => t.position), toIndex);
-
-    const changedDate = (task.scheduledDate ?? null) !== scheduledDate;
-    if (!changedDate && task.position === position) return;
-    bulk.mutate({ updates: [{ id: taskId, scheduledDate, position }] });
+    const payload = calendarMovePayload(task, dest.map((t) => t.position), toContainer, toIndex);
+    if (payload) bulk.mutate(payload);
   }
 
   const statusById = useMemo(

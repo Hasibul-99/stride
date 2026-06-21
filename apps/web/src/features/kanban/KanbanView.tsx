@@ -11,8 +11,8 @@ import {
 import { TaskCard } from '@/features/tasks/TaskCard';
 import { TaskDrawer } from '@/features/tasks/TaskDrawer';
 import { StatusManager } from '@/features/tasks/StatusManager';
-import { positionForIndex } from '@/features/tasks/positions';
 import { SortableBoard, type BoardContainer } from '@/features/board/SortableBoard';
+import { kanbanMovePayload } from './drop';
 import { COLOR_HEX } from '@/features/workspaces/colors';
 
 export function KanbanView({ projectId, projectColor }: { projectId: string; projectColor: ProjectColor }) {
@@ -48,9 +48,8 @@ export function KanbanView({ projectId, projectColor }: { projectId: string; pro
     const task = tasks?.find((t) => t.id === taskId);
     if (!task) return;
     const dest = (itemsByContainer[toStatusId] ?? []).filter((t) => t.id !== taskId);
-    const position = positionForIndex(dest.map((t) => t.position), toIndex);
-    if (task.statusId === toStatusId && task.position === position) return;
-    bulk.mutate({ updates: [{ id: taskId, statusId: toStatusId, position }] });
+    const payload = kanbanMovePayload(task, dest.map((t) => t.position), toStatusId, toIndex);
+    if (payload) bulk.mutate(payload);
   }
 
   const containers: BoardContainer[] = ordered.map((s) => {

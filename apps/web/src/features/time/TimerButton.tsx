@@ -7,7 +7,7 @@ export function TimerButton({ taskId, className }: { taskId: string; className?:
   const { data: running } = useRunningTimer();
   const start = useStartTimer();
   const stop = useStopTimer();
-  const isRunning = running?.task.id === taskId;
+  const isRunning = running?.task?.id === taskId;
 
   function onClick(e: MouseEvent) {
     e.stopPropagation();
