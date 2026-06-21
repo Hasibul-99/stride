@@ -52,7 +52,7 @@ export function SearchPalette() {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/30 p-4 pt-[15vh]" onClick={() => setOpen(false)}>
-      <div className="w-full max-w-lg overflow-hidden rounded-modal border border-border bg-surface shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div role="dialog" aria-modal="true" aria-label="Search" className="w-full max-w-lg overflow-hidden rounded-modal border border-border bg-surface shadow-xl" onClick={(e) => e.stopPropagation()}>
         <input
           ref={inputRef}
           value={q}

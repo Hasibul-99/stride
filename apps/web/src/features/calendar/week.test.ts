@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { buildWeek, weekStart, shiftWeeks, rangeOf } from './week';
+import { buildWeek, weekStart, shiftWeeks, rangeOf, isoToDate } from './week';
 import { freezeTime } from '@/test/time';
 
 // Suite runs in America/New_York (vitest.config env.TZ).
@@ -46,5 +46,12 @@ describe('week helpers', () => {
     restore = freezeTime('2026-06-15T12:00:00.000Z');
     const next = buildWeek(shiftWeeks(weekStart(new Date()), 1));
     expect(next[0].iso).toBe('2026-06-22');
+  });
+
+  it('isoToDate parses a YYYY-MM-DD back to a Date', () => {
+    const d = isoToDate('2026-06-15');
+    expect(d.getFullYear()).toBe(2026);
+    expect(d.getMonth()).toBe(5); // June (0-based)
+    expect(d.getDate()).toBe(15);
   });
 });

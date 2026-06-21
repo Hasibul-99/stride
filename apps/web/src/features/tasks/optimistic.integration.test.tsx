@@ -84,6 +84,6 @@ describe('optimistic update + rollback', () => {
     await waitFor(() =>
       expect((screen.getByDisplayValue('Finish me') as HTMLInputElement).className).toContain('line-through'),
     );
-    expect(title.closest('tr')!.className).toContain('opacity-60');
+    expect(title.closest('tr')!.className).toContain('bg-surface-2');
   });
 });

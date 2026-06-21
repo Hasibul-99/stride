@@ -2,6 +2,7 @@ import { format } from 'date-fns';
 import { COLOR_HEX } from '@/features/workspaces/colors';
 import { Avatar } from '@/components/ui/Avatar';
 import { useDeleteEvent, type CalEvent } from './api';
+import { useFocusTrap } from '@/lib/useFocusTrap';
 import { cn } from '@/lib/utils';
 
 const RSVP_STYLE: Record<string, string> = {
@@ -12,12 +13,18 @@ const RSVP_STYLE: Record<string, string> = {
 
 export function EventDrawer({ event, onClose }: { event: CalEvent; onClose: () => void }) {
   const del = useDeleteEvent();
+  const dialogRef = useFocusTrap<HTMLDivElement>(onClose);
 
   return (
     <div className="fixed inset-0 z-40" onClick={onClose}>
       <div className="absolute inset-0 bg-black/20" />
-      <aside
-        className="absolute right-0 top-0 flex h-full w-[400px] flex-col gap-4 overflow-y-auto border-l border-border bg-surface p-5 shadow-xl"
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Event details"
+        tabIndex={-1}
+        className="absolute right-0 top-0 flex h-full w-[400px] flex-col gap-4 overflow-y-auto border-l border-border bg-surface p-5 shadow-xl outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -75,7 +82,7 @@ export function EventDrawer({ event, onClose }: { event: CalEvent; onClose: () =
             ))}
           </div>
         </div>
-      </aside>
+      </div>
     </div>
   );
 }

@@ -11,7 +11,7 @@
   --color-border-strong: #d3d7de;
   --color-foreground: #1a1d23; /* grey-900 */
   --color-foreground-2: #515862; /* grey-600 */
-  --color-muted: #8a909a; /* grey-400 */
+  --color-muted: #5b616c; /* grey-500 — AA (4.5:1) on white/near-white surfaces */
 
   /* Primary */
   --color-primary: #2563eb;

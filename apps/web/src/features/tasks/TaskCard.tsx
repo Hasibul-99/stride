@@ -20,7 +20,7 @@ export function TaskCard({ task, status, assignee, projectColor, onClick }: Prop
     <div
       className={cn(
         'group relative flex w-full flex-col gap-2 rounded-card border border-border bg-surface p-2.5 pl-3 text-left shadow-sm transition hover:border-border-strong hover:shadow-md',
-        completed && 'opacity-[0.55]',
+        completed && 'bg-surface-2',
       )}
     >
       <span
@@ -34,7 +34,7 @@ export function TaskCard({ task, status, assignee, projectColor, onClick }: Prop
         onClick={onClick}
         className={cn(
           'line-clamp-2 text-left text-[13px] leading-snug outline-none after:absolute after:inset-0 after:content-[""]',
-          completed && 'line-through',
+          completed && 'text-muted line-through',
         )}
       >
         {task.title}

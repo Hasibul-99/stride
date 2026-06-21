@@ -175,13 +175,18 @@ function Container({ id, className, children }: { id: string; className?: string
 
 function SortableItem({ id, children }: { id: string; children: ReactNode }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  // Drop dnd-kit's role="button" on the wrapper: the card contains its own
+  // buttons, so keeping it would be a nested-interactive a11y violation. The
+  // element stays focusable (tabIndex) with listeners, so keyboard drag works.
+  const a11yAttributes = { ...attributes };
+  delete (a11yAttributes as Record<string, unknown>).role;
   return (
     <div
       ref={setNodeRef}
       data-draggable-id={id}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(isDragging && 'opacity-40')}
-      {...attributes}
+      {...a11yAttributes}
       {...listeners}
     >
       {children}

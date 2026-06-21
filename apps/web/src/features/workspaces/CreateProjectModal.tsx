@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { PROJECT_COLORS, type ProjectColor } from '@teamboard/shared';
 import { COLOR_HEX } from './colors';
 import { useCreateProject, type Folder } from './api';
+import { useFocusTrap } from '@/lib/useFocusTrap';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 
 export function CreateProjectModal({ workspaceId, folders, onClose }: Props) {
   const create = useCreateProject(workspaceId);
+  const dialogRef = useFocusTrap<HTMLDivElement>(onClose);
   const [name, setName] = useState('');
   const [color, setColor] = useState<ProjectColor>('blue');
   const [folderId, setFolderId] = useState<string>('');
@@ -35,13 +37,17 @@ export function CreateProjectModal({ workspaceId, folders, onClose }: Props) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-modal border border-border bg-surface p-6 shadow-lg"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="New project"
+        tabIndex={-1}
+        className="w-full max-w-md rounded-modal border border-border bg-surface p-6 shadow-lg outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="mb-4 text-lg font-semibold">New project</h2>
         <form className="space-y-4" onSubmit={onSubmit}>
           <input
-            autoFocus
             placeholder="Project name"
             value={name}
             onChange={(e) => setName(e.target.value)}

@@ -64,7 +64,7 @@ export function SignInPage() {
         </a>
         <p className="mt-6 text-center text-muted">
           No account?{' '}
-          <Link to="/auth/signup" className="text-primary">
+          <Link to="/auth/signup" className="text-primary underline">
             Sign up
           </Link>
         </p>

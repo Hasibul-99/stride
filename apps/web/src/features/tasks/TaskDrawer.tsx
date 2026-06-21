@@ -6,6 +6,7 @@ import { TimerButton } from '@/features/time/TimerButton';
 import { formatElapsed, useDeleteTimeEntry, useTaskTime } from '@/features/time/api';
 import { ChatPanel } from '@/features/chat/ChatPanel';
 import { FilesSection } from '@/features/files/FilesSection';
+import { useFocusTrap } from '@/lib/useFocusTrap';
 import { StatusSelect } from './StatusSelect';
 import { TimeEstimateInput } from './TimeEstimateInput';
 import {
@@ -28,6 +29,7 @@ export function TaskDrawer({ projectId, task, onClose }: Props) {
   const update = useUpdateTask(projectId);
   const del = useDeleteTask(projectId);
 
+  const dialogRef = useFocusTrap<HTMLDivElement>(onClose);
   const [title, setTitle] = useState(task.title);
 
   useEffect(() => {
@@ -43,8 +45,13 @@ export function TaskDrawer({ projectId, task, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-40" onClick={onClose}>
       <div className="absolute inset-0 bg-black/20" />
-      <aside
-        className="absolute right-0 top-0 flex h-full w-[420px] flex-col gap-5 overflow-y-auto border-l border-border bg-surface p-5 shadow-xl"
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Task details"
+        tabIndex={-1}
+        className="absolute right-0 top-0 flex h-full w-[420px] flex-col gap-5 overflow-y-auto border-l border-border bg-surface p-5 shadow-xl outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -108,6 +115,7 @@ export function TaskDrawer({ projectId, task, onClose }: Props) {
           <div className="flex gap-2">
             <input
               type="date"
+              aria-label="Date"
               value={task.scheduledDate ?? ''}
               onChange={(e) =>
                 update.mutate({ id: task.id, scheduledDate: e.target.value || null })
@@ -144,7 +152,7 @@ export function TaskDrawer({ projectId, task, onClose }: Props) {
         <TimeSection task={task} />
         <FilesSection taskId={task.id} />
         <ChatPanel taskId={task.id} />
-      </aside>
+      </div>
     </div>
   );
 }

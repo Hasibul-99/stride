@@ -33,9 +33,9 @@ export function ReportsPage() {
       <header className="mb-4 flex items-center gap-3">
         <h1 className="text-2xl font-semibold">Time reports</h1>
         <div className="ml-auto flex items-center gap-2 text-sm">
-          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="rounded-control border border-border bg-surface px-2 py-1" />
+          <input aria-label="From date" type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="rounded-control border border-border bg-surface px-2 py-1" />
           <span className="text-muted">→</span>
-          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="rounded-control border border-border bg-surface px-2 py-1" />
+          <input aria-label="To date" type="date" value={to} onChange={(e) => setTo(e.target.value)} className="rounded-control border border-border bg-surface px-2 py-1" />
           <button onClick={downloadCsv} className="rounded-control bg-primary px-3 py-1 font-medium text-primary-foreground">
             Export CSV
           </button>

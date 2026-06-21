@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { PROJECT_COLORS, type ProjectColor } from '@teamboard/shared';
 import { COLOR_HEX } from '@/features/workspaces/colors';
+import { useFocusTrap } from '@/lib/useFocusTrap';
 import { cn } from '@/lib/utils';
 import {
   useCreateStatus,
@@ -13,13 +14,19 @@ import {
 export function StatusManager({ projectId, onClose }: { projectId: string; onClose: () => void }) {
   const { data: statuses } = useStatuses(projectId);
   const create = useCreateStatus(projectId);
+  const dialogRef = useFocusTrap<HTMLDivElement>(onClose);
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState<ProjectColor>('slate');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={onClose}>
       <div
-        className="w-full max-w-lg rounded-modal border border-border bg-surface p-6 shadow-lg"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Manage statuses"
+        tabIndex={-1}
+        className="w-full max-w-lg rounded-modal border border-border bg-surface p-6 shadow-lg outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="mb-4 text-lg font-semibold">Manage statuses</h2>
@@ -89,6 +96,7 @@ function StatusRow({
         onChange={(c) => update.mutate({ id: status.id, color: c })}
       />
       <input
+        aria-label="Status name"
         value={name}
         onChange={(e) => setName(e.target.value)}
         onBlur={() => name.trim() && name !== status.name && update.mutate({ id: status.id, name: name.trim() })}
@@ -162,6 +170,7 @@ function ColorPicker({
           {PROJECT_COLORS.map((c) => (
             <button
               key={c}
+              aria-label={c}
               onClick={() => {
                 onChange(c);
                 setOpen(false);

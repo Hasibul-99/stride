@@ -109,9 +109,10 @@ export function CalendarView({ projectId, projectColor }: { projectId: string; p
                 <button
                   key={e.id}
                   onClick={() => setOpenEvent(e)}
-                  className="block w-full rounded px-1.5 py-1 text-left text-[11px] leading-tight"
-                  style={{ background: `${COLOR_HEX[e.color]}22`, color: COLOR_HEX[e.color] }}
+                  className="flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-[11px] leading-tight text-foreground"
+                  style={{ background: `${COLOR_HEX[e.color]}22` }}
                 >
+                  <span aria-hidden className="h-2 w-2 shrink-0 rounded-full" style={{ background: COLOR_HEX[e.color] }} />
                   <span className="tabular-nums">{format(new Date(e.startAt), 'HH:mm')}</span>{' '}
                   {e.title}
                   {e.recurrenceId ? ' 🔁' : ''}
@@ -275,6 +276,7 @@ function Toolbar(p: ToolbarProps) {
           ))}
         </div>
         <select
+          aria-label="Filter by status"
           value={p.statusFilter}
           onChange={(e) => p.onStatus(e.target.value)}
           className="rounded-control border border-border bg-surface px-2 py-1 text-sm"

@@ -35,6 +35,7 @@ export function Sidebar() {
     <aside className="flex w-64 flex-col border-r border-border bg-surface">
       <div className="border-b border-border p-3">
         <select
+          aria-label="Workspace"
           value={currentWorkspaceId ?? ''}
           onChange={(e) => setCurrentWorkspace(e.target.value)}
           className="w-full rounded-control border border-border bg-surface px-2 py-1.5 text-sm font-medium outline-none focus:border-primary"

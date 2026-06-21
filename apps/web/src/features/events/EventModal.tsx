@@ -8,6 +8,7 @@ import {
 import { COLOR_HEX } from '@/features/workspaces/colors';
 import { useProjectMembers } from '@/features/tasks/api';
 import { useCreateEvent } from './api';
+import { useFocusTrap } from '@/lib/useFocusTrap';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -19,6 +20,7 @@ interface Props {
 export function EventModal({ projectId, defaultDate, onClose }: Props) {
   const create = useCreateEvent();
   const { data: members } = useProjectMembers(projectId ?? undefined);
+  const dialogRef = useFocusTrap<HTMLDivElement>(onClose);
 
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(defaultDate ?? new Date().toISOString().slice(0, 10));
@@ -78,22 +80,26 @@ export function EventModal({ projectId, defaultDate, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={onClose}>
       <div
-        className="w-full max-w-md rounded-modal border border-border bg-surface p-6 shadow-lg"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="New event"
+        tabIndex={-1}
+        className="w-full max-w-md rounded-modal border border-border bg-surface p-6 shadow-lg outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="mb-4 text-lg font-semibold">New event</h2>
         <form className="space-y-3" onSubmit={onSubmit}>
           <input
-            autoFocus
             placeholder="Title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="w-full rounded-control border border-border bg-surface px-3 py-2 outline-none focus:border-primary"
           />
           <div className="flex gap-2">
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="flex-1 rounded-control border border-border bg-surface px-2 py-2" />
-            <input type="time" step={900} value={start} onChange={(e) => setStart(e.target.value)} className="rounded-control border border-border bg-surface px-2 py-2" />
-            <input type="time" step={900} value={end} onChange={(e) => setEnd(e.target.value)} className="rounded-control border border-border bg-surface px-2 py-2" />
+            <input aria-label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className="flex-1 rounded-control border border-border bg-surface px-2 py-2" />
+            <input aria-label="Start time" type="time" step={900} value={start} onChange={(e) => setStart(e.target.value)} className="rounded-control border border-border bg-surface px-2 py-2" />
+            <input aria-label="End time" type="time" step={900} value={end} onChange={(e) => setEnd(e.target.value)} className="rounded-control border border-border bg-surface px-2 py-2" />
           </div>
           <input
             placeholder="Location"
@@ -109,6 +115,7 @@ export function EventModal({ projectId, defaultDate, onClose }: Props) {
                 <button
                   type="button"
                   key={c}
+                  aria-label={c}
                   onClick={() => setColor(c)}
                   style={{ background: COLOR_HEX[c] }}
                   className={cn('h-5 w-5 rounded-full', c === color && 'ring-2 ring-foreground')}
@@ -167,7 +174,7 @@ export function EventModal({ projectId, defaultDate, onClose }: Props) {
 
           <div className="flex items-center gap-2 text-sm">
             <span className="text-muted">Remind</span>
-            <select value={reminder} onChange={(e) => setReminder(e.target.value)} className="rounded-control border border-border bg-surface px-2 py-1">
+            <select aria-label="Reminder" value={reminder} onChange={(e) => setReminder(e.target.value)} className="rounded-control border border-border bg-surface px-2 py-1">
               <option value="">Off</option>
               <option value="10">10m before</option>
               <option value="15">15m before</option>
@@ -178,7 +185,7 @@ export function EventModal({ projectId, defaultDate, onClose }: Props) {
 
           <div className="flex items-center gap-2 text-sm">
             <span className="text-muted">Repeat</span>
-            <select value={freq} onChange={(e) => setFreq(e.target.value as RecurrenceFrequency | 'none')} className="rounded-control border border-border bg-surface px-2 py-1">
+            <select aria-label="Repeat frequency" value={freq} onChange={(e) => setFreq(e.target.value as RecurrenceFrequency | 'none')} className="rounded-control border border-border bg-surface px-2 py-1">
               <option value="none">Never</option>
               {RECURRENCE_FREQUENCIES.map((f) => (
                 <option key={f} value={f}>{f.toLowerCase()}</option>
@@ -187,7 +194,7 @@ export function EventModal({ projectId, defaultDate, onClose }: Props) {
             {freq !== 'none' && (
               <>
                 <span className="text-muted">every</span>
-                <input value={interval} onChange={(e) => setInterval(e.target.value)} className="w-12 rounded-control border border-border bg-surface px-2 py-1" />
+                <input aria-label="Interval" value={interval} onChange={(e) => setInterval(e.target.value)} className="w-12 rounded-control border border-border bg-surface px-2 py-1" />
                 <input placeholder="× times" value={count} onChange={(e) => setCount(e.target.value)} className="w-20 rounded-control border border-border bg-surface px-2 py-1" />
               </>
             )}

@@ -255,11 +255,19 @@ function Row({ task, cols, statuses, members, status, selected, onSelect, onUpda
   const [title, setTitle] = useState(task.title);
   const visible = new Set(cols.map((c) => c.key));
   return (
-    <tr className={cn('border-b border-border hover:bg-background/50', task.completedAt && 'opacity-60')}>
-      <td className="px-2 py-1.5"><input type="checkbox" checked={selected} onChange={onSelect} /></td>
+    <tr className={cn('border-b border-border hover:bg-background/50', task.completedAt && 'bg-surface-2')}>
+      <td className="px-2 py-1.5">
+        <input
+          type="checkbox"
+          aria-label={`Select ${task.title}`}
+          checked={selected}
+          onChange={onSelect}
+        />
+      </td>
       {visible.has('title') && (
         <td className="px-2 py-1.5">
           <input
+            aria-label="Task title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onBlur={() => title.trim() && title !== task.title && onUpdate({ title: title.trim() })}
@@ -271,7 +279,7 @@ function Row({ task, cols, statuses, members, status, selected, onSelect, onUpda
         <td className="px-2 py-1.5">
           <span className="inline-flex items-center gap-1.5">
             {status && <span className="h-2 w-2 rounded-full" style={{ background: COLOR_HEX[status.color] }} />}
-            <select value={task.statusId} onChange={(e) => onUpdate({ statusId: e.target.value })} className="bg-transparent outline-none">
+            <select aria-label="Status" value={task.statusId} onChange={(e) => onUpdate({ statusId: e.target.value })} className="bg-transparent outline-none">
               {statuses.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </span>
@@ -279,7 +287,7 @@ function Row({ task, cols, statuses, members, status, selected, onSelect, onUpda
       )}
       {visible.has('assignee') && (
         <td className="px-2 py-1.5">
-          <select value={task.assigneeId ?? ''} onChange={(e) => onUpdate({ assigneeId: e.target.value || null })} className="bg-transparent outline-none">
+          <select aria-label="Assignee" value={task.assigneeId ?? ''} onChange={(e) => onUpdate({ assigneeId: e.target.value || null })} className="bg-transparent outline-none">
             <option value="">—</option>
             {members.map((m) => <option key={m.user.id} value={m.user.id}>{m.user.name}</option>)}
           </select>
@@ -287,7 +295,7 @@ function Row({ task, cols, statuses, members, status, selected, onSelect, onUpda
       )}
       {visible.has('date') && (
         <td className="px-2 py-1.5">
-          <input type="date" value={task.scheduledDate ?? ''} onChange={(e) => onUpdate({ scheduledDate: e.target.value || null })} className="bg-transparent outline-none" />
+          <input aria-label="Date" type="date" value={task.scheduledDate ?? ''} onChange={(e) => onUpdate({ scheduledDate: e.target.value || null })} className="bg-transparent outline-none" />
         </td>
       )}
       {visible.has('estimate') && (
