@@ -15,6 +15,10 @@ export function useChatHistory(taskId: string | undefined) {
   return useQuery({
     queryKey: ['chat', taskId],
     enabled: !!taskId,
+    // Always refetch when a task is (re)opened so messages received while it was
+    // closed are loaded (socket events only arrive while the room is joined).
+    staleTime: 0,
+    refetchOnMount: 'always',
     queryFn: async () =>
       (await api.get<{ messages: ChatMessage[]; nextCursor: string | null }>(`/tasks/${taskId}/chat`))
         .data,

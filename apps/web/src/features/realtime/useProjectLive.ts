@@ -18,7 +18,13 @@ export function useProjectLive(projectId: string | undefined) {
     if (!projectId) return;
     const socket = connectSocket();
 
-    const join = () => socket.emit(SOCKET_EVENTS.joinProject, { projectId });
+    // (Re)join the room and resync caches on every connect — this catches a
+    // client up on changes it missed while offline/disconnected.
+    const join = () => {
+      socket.emit(SOCKET_EVENTS.joinProject, { projectId });
+      qc.invalidateQueries({ queryKey: ['tasks', projectId] });
+      qc.invalidateQueries({ queryKey: ['events'] });
+    };
     if (socket.connected) join();
     socket.on('connect', join);
 
