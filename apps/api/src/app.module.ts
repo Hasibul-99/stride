@@ -26,6 +26,7 @@ import { FilesModule } from './files/files.module';
 import { NotesModule } from './notes/notes.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { RecurrenceQueueModule } from './recurrence/recurrence.module';
+import { OtpModule } from './otp/otp.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 function redisConnection() {
@@ -67,6 +68,7 @@ function redisConnection() {
     NotesModule,
     IntegrationsModule,
     RecurrenceQueueModule,
+    OtpModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

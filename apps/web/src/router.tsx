@@ -3,6 +3,9 @@ import { createBrowserRouter } from 'react-router-dom';
 import { LandingPage } from '@/features/marketing/LandingPage';
 import { SignInPage } from '@/features/auth/SignInPage';
 import { SignUpPage } from '@/features/auth/SignUpPage';
+import { VerifyEmailPage } from '@/features/auth/VerifyEmailPage';
+import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage';
+import { ResetPasswordPage } from '@/features/auth/ResetPasswordPage';
 import { AuthCallbackPage } from '@/features/auth/AuthCallbackPage';
 import { RequireAuth } from '@/features/auth/RequireAuth';
 import { AppLayout } from '@/app/AppLayout';
@@ -25,6 +28,9 @@ export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
   { path: '/auth/signin', element: <SignInPage /> },
   { path: '/auth/signup', element: <SignUpPage /> },
+  { path: '/auth/verify', element: <VerifyEmailPage /> },
+  { path: '/auth/forgot', element: <ForgotPasswordPage /> },
+  { path: '/auth/reset', element: <ResetPasswordPage /> },
   { path: '/auth/callback', element: <AuthCallbackPage /> },
   { path: '/rsvp', element: lazyRoute(<RsvpPage />) },
   {

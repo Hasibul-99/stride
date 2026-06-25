@@ -43,3 +43,15 @@ export const WORKLOAD_AMBER_MINUTES = 480; // > 8h
 export const WORKLOAD_RED_MINUTES = 600; // > 10h
 
 export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024; // 25MB
+
+// ─── Email OTP (signup verification + password reset) ────
+// Single source of truth for the code format + security controls. Bumping the
+// digit count to 6 is a one-line change here (UI boxes also read OTP_LENGTH).
+export const OTP_LENGTH = 4;
+export const OTP_EXPIRY_MINUTES = 10;
+export const OTP_MAX_ATTEMPTS = 5; // verify attempts per issued code; invalidate after
+export const OTP_RESEND_COOLDOWN_SECONDS = 60;
+export const OTP_MAX_SENDS_PER_HOUR = 5; // per email+purpose
+
+export const OTP_PURPOSES = ['registration', 'password_reset'] as const;
+export type OtpPurpose = (typeof OTP_PURPOSES)[number];

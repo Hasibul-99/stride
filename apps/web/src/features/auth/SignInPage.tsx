@@ -17,6 +17,11 @@ export function SignInPage() {
       await signin.mutateAsync({ email, password });
       navigate('/app');
     } catch (err) {
+      // Unverified account → bounce to the verify screen and resend a fresh code.
+      if (isAxiosError(err) && err.response?.status === 403 && err.response.data?.code === 'EMAIL_NOT_VERIFIED') {
+        navigate('/auth/verify', { state: { email, autoResend: true } });
+        return;
+      }
       setError(
         isAxiosError(err) && err.response?.status === 401
           ? 'Invalid email or password'
@@ -48,6 +53,11 @@ export function SignInPage() {
             className="w-full rounded-control border border-border bg-surface px-3 py-2 outline-none focus:border-primary"
           />
           {error && <p className="text-sm text-red-600">{error}</p>}
+          <div className="text-right">
+            <Link to="/auth/forgot" className="text-sm text-primary underline">
+              Forgot password?
+            </Link>
+          </div>
           <button
             type="submit"
             disabled={signin.isPending}

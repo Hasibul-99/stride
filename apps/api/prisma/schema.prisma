@@ -52,6 +52,7 @@ model User {
   gcalResourceId     String?
   emailNotifications Boolean  @default(true)
   notifPrefs         Json? // { [type]: { inApp: bool, email: bool } }
+  emailVerifiedAt    DateTime? // null until the signup OTP is verified
   createdAt          DateTime @default(now())
 
   ownedWorkspaces  Workspace[]        @relation("WorkspaceOwner")
@@ -85,6 +86,26 @@ model RefreshToken {
 
   @@index([userId])
   @@map("refresh_tokens")
+}
+
+// One active OTP per (email, purpose). Codes are stored hashed (argon2), never raw.
+// Keyed by email (not a user FK) so it covers both registration (user exists,
+// unverified) and password_reset uniformly.
+model OtpVerification {
+  id         String    @id @default(cuid())
+  email      String
+  codeHash   String // argon2 hash of the numeric code
+  purpose    String // 'registration' | 'password_reset'
+  expiresAt  DateTime
+  attempts   Int       @default(0) // verify attempts against this code
+  sendCount  Int       @default(0) // sends within the current hour window
+  lastSentAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([email, purpose])
+  @@index([email])
+  @@map("otp_verifications")
 }
 
 // ─── Workspaces ──────────────────────────────────────────

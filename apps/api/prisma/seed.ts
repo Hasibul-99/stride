@@ -70,6 +70,7 @@ async function main() {
       passwordHash,
       timezone: 'America/New_York',
       avatarUrl: null,
+      emailVerifiedAt: new Date(),
     },
   });
   const bob = await prisma.user.create({
@@ -78,6 +79,7 @@ async function main() {
       name: 'Bob Martins',
       passwordHash,
       timezone: 'America/New_York',
+      emailVerifiedAt: new Date(),
     },
   });
   const carol = await prisma.user.create({
@@ -86,6 +88,7 @@ async function main() {
       name: 'Carol Diaz',
       passwordHash,
       timezone: 'Europe/London',
+      emailVerifiedAt: new Date(),
     },
   });
 

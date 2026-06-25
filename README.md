@@ -45,4 +45,42 @@ pnpm dev
 | `pnpm db:studio` | Open Prisma Studio |
 | `pnpm db:seed` | Seed demo data |
 
+## Email verification & password reset (OTP)
+
+New signups must verify a 4-digit code emailed to them before they can sign in,
+and passwords are reset with the same OTP mechanism.
+
+- **Endpoints** (all under `/api/auth`): `signup` (creates an *unverified* account
+  + emails a code, returns no token), `verify-email` (code → tokens, lands logged in),
+  `resend-otp`, `forgot-password` (generic response — never reveals if an email exists),
+  `reset-password` (code + new password; revokes all existing sessions). Unverified
+  sign-in returns `403 { code: 'EMAIL_NOT_VERIFIED' }` and the web app bounces to the
+  verify screen.
+- **Security:** codes hashed at rest (argon2), 10-min expiry, 5 attempts then the code
+  is invalidated, 60s resend cooldown + 5 sends/hour, one active code per (email, purpose).
+  Tunables live in `packages/shared/src/constants.ts` (`OTP_LENGTH`, `OTP_EXPIRY_MINUTES`, …).
+
+### Required `.env` mail vars
+```bash
+SMTP_HOST=smtp.gmail.com      # dev default: localhost (Mailpit)
+SMTP_PORT=587                 # 587 = STARTTLS (secure:false); use 465 for SSL
+SMTP_USER=you@gmail.com       # a Gmail App Password account
+SMTP_PASS=your-app-password   # NOT your normal password — create an App Password
+SMTP_FROM="TeamBoard <you@gmail.com>"
+```
+> ⚠️ Gmail SMTP caps at ~500 emails/day and isn't built for transactional volume —
+> fine for launch; move to Resend/Postmark/SES at scale (see the `TODO` in
+> `apps/api/src/mail/mail.service.ts`). In local dev, emails are captured by **Mailpit**
+> at http://localhost:8025 (no Gmail needed).
+
+### A queue worker must be running
+OTP emails are sent **asynchronously** via BullMQ, so the HTTP response isn't blocked on
+SMTP. The workers run **in-process with the API** (`pnpm dev` / the running API container),
+so they just need **Redis up** (`docker compose up -d`). No separate worker process.
+
+### Cleanup schedule
+A daily repeatable job (registered by `OtpModule`, **03:00** server time) deletes
+unverified users older than 24h (and their empty personal workspace) plus any expired
+OTP rows. It runs automatically while the API is up with Redis available.
+
 See [the prompt playbook](./work-management-platform-claude-code-prompts.md) for the full phase-by-phase build plan.

@@ -8,6 +8,10 @@ export class MailService {
   private readonly transporter: nodemailer.Transporter;
 
   constructor(private readonly config: ConfigService) {
+    // TODO: transactional provider (Resend/Postmark/SES) at scale — Gmail SMTP
+    // caps ~500 emails/day and isn't built for transactional volume.
+    // For Gmail use SMTP_HOST=smtp.gmail.com, SMTP_PORT=587 (STARTTLS, secure:false
+    // works); switch `secure` to true only if you move to port 465.
     this.transporter = nodemailer.createTransport({
       host: this.config.getOrThrow<string>('SMTP_HOST'),
       port: this.config.get<number>('SMTP_PORT') ?? 1025,

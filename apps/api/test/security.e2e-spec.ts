@@ -28,7 +28,16 @@ describe('Security: project access & guest isolation (e2e)', () => {
     await app.init();
 
     const server = app.getHttpServer();
-    aliceToken = (await request(server).post('/auth/signup').send({ email: aliceEmail, password, name: 'Alice' })).body.accessToken;
+
+    // Signup now creates an UNVERIFIED account (no token). Mark verified + sign in.
+    async function tokenFor(email: string, name: string): Promise<string> {
+      await request(server).post('/auth/signup').send({ email, password, name });
+      await prisma.user.update({ where: { email }, data: { emailVerifiedAt: new Date() } });
+      const res = await request(server).post('/auth/signin').send({ email, password });
+      return res.body.accessToken;
+    }
+
+    aliceToken = await tokenFor(aliceEmail, 'Alice');
 
     workspaceId = (await request(server).get('/workspaces').set('Authorization', `Bearer ${aliceToken}`)).body[0].id;
     projectA = (await request(server).post(`/workspaces/${workspaceId}/projects`).set('Authorization', `Bearer ${aliceToken}`).send({ name: 'Project A' })).body.id;
@@ -39,7 +48,7 @@ describe('Security: project access & guest isolation (e2e)', () => {
     const invite = await prisma.invite.findFirst({ where: { email: bobEmail, projectId: projectA } });
     const token = inviteRawTokenFor(invite!.tokenHash); // not retrievable; accept via DB-marked flow below
 
-    bobToken = (await request(server).post('/auth/signup').send({ email: bobEmail, password, name: 'Bob' })).body.accessToken;
+    bobToken = await tokenFor(bobEmail, 'Bob');
     // Accepting needs the raw token (only emailed). Simulate acceptance directly: add bob as GUEST member of A.
     const bob = await prisma.user.findUnique({ where: { email: bobEmail } });
     await prisma.projectMember.create({ data: { projectId: projectA, userId: bob!.id, role: 'GUEST' } });
@@ -53,6 +62,7 @@ describe('Security: project access & guest isolation (e2e)', () => {
     await prisma.workspace.deleteMany({ where: { ownerId: { in: ids } } });
     await prisma.refreshToken.deleteMany({ where: { userId: { in: ids } } });
     await prisma.user.deleteMany({ where: { id: { in: ids } } });
+    await prisma.otpVerification.deleteMany({ where: { email: { in: [aliceEmail, bobEmail] } } });
     await app.close();
   });
 

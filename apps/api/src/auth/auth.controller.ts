@@ -13,10 +13,18 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
-import { signinSchema, signupSchema, type AuthUser } from '@teamboard/shared';
+import {
+  forgotPasswordSchema,
+  resendOtpSchema,
+  resetPasswordSchema,
+  signinSchema,
+  signupSchema,
+  verifyEmailSchema,
+  type AuthUser,
+} from '@teamboard/shared';
 import { Public } from '../common/decorators/public.decorator';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
-import { AuthService, type AuthResult } from './auth.service';
+import { AuthService, type AuthResult, type OtpIssuedResult } from './auth.service';
 import { GoogleAuthService } from './google-auth.service';
 import { TokenService } from './token.service';
 import { REFRESH_COOKIE, clearRefreshCookie, setRefreshCookie } from './cookie';
@@ -46,14 +54,60 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('signup')
+  @HttpCode(200)
   @UsePipes(new ZodValidationPipe(signupSchema))
-  @ApiOperation({ summary: 'Create account + personal workspace' })
-  async signup(
-    @Body() body: typeof signupSchema._type,
+  @ApiOperation({ summary: 'Create an unverified account + email a verification code' })
+  async signup(@Body() body: typeof signupSchema._type): Promise<OtpIssuedResult> {
+    return this.auth.signup(body);
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('verify-email')
+  @HttpCode(200)
+  @UsePipes(new ZodValidationPipe(verifyEmailSchema))
+  @ApiOperation({ summary: 'Verify the signup code → issue tokens' })
+  async verifyEmail(
+    @Body() body: typeof verifyEmailSchema._type,
     @Res({ passthrough: true }) res: Response,
   ): Promise<AuthResponse> {
-    return this.respond(res, await this.auth.signup(body));
+    return this.respond(res, await this.auth.verifyEmail(body));
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Post('resend-otp')
+  @HttpCode(200)
+  @UsePipes(new ZodValidationPipe(resendOtpSchema))
+  @ApiOperation({ summary: 'Re-send an OTP (registration or password reset)' })
+  async resendOtp(@Body() body: typeof resendOtpSchema._type): Promise<OtpIssuedResult> {
+    return this.auth.resendOtp(body.email, body.purpose);
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Post('forgot-password')
+  @HttpCode(200)
+  @UsePipes(new ZodValidationPipe(forgotPasswordSchema))
+  @ApiOperation({ summary: 'Request a password-reset code (generic response)' })
+  async forgotPassword(
+    @Body() body: typeof forgotPasswordSchema._type,
+  ): Promise<{ message: string }> {
+    return this.auth.forgotPassword(body.email);
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('reset-password')
+  @HttpCode(200)
+  @UsePipes(new ZodValidationPipe(resetPasswordSchema))
+  @ApiOperation({ summary: 'Reset the password with an OTP code' })
+  async resetPassword(
+    @Body() body: typeof resetPasswordSchema._type,
+  ): Promise<{ message: string }> {
+    return this.auth.resetPassword(body);
   }
 
   @Public()

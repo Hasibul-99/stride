@@ -21,7 +21,28 @@ export const handlers = [
   http.post('*/api/auth/signup', async ({ request }) => {
     const parsed = signupSchema.safeParse(await request.json());
     if (!parsed.success) return HttpResponse.json({ message: 'Invalid' }, { status: 400 });
-    return HttpResponse.json({ accessToken: ACCESS_TOKEN, user: makeUser({ name: parsed.data.name }) });
+    // New flow: unverified account + emailed code, no token.
+    return HttpResponse.json({ message: 'Verification code sent', email: parsed.data.email });
+  }),
+
+  http.post('*/api/auth/verify-email', async ({ request }) => {
+    const body = (await request.json()) as { email: string; code: string };
+    if (body.code !== '1234') return HttpResponse.json({ message: 'Invalid or expired code' }, { status: 422 });
+    return HttpResponse.json({ accessToken: ACCESS_TOKEN, user: makeUser({ email: body.email }) });
+  }),
+
+  http.post('*/api/auth/resend-otp', () =>
+    HttpResponse.json({ message: 'If that email needs a code, one has been sent', email: '' }),
+  ),
+
+  http.post('*/api/auth/forgot-password', () =>
+    HttpResponse.json({ message: 'If that email exists, a code has been sent' }),
+  ),
+
+  http.post('*/api/auth/reset-password', async ({ request }) => {
+    const body = (await request.json()) as { code: string };
+    if (body.code !== '1234') return HttpResponse.json({ message: 'Invalid or expired code' }, { status: 422 });
+    return HttpResponse.json({ message: 'Password updated' });
   }),
 
   http.post('*/api/auth/refresh', () =>

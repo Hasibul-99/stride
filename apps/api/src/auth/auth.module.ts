@@ -4,9 +4,10 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { TokenService } from './token.service';
 import { GoogleAuthService } from './google-auth.service';
+import { OtpModule } from '../otp/otp.module';
 
 @Module({
-  imports: [JwtModule.register({})],
+  imports: [JwtModule.register({}), OtpModule],
   controllers: [AuthController],
   providers: [AuthService, TokenService, GoogleAuthService],
   exports: [TokenService],

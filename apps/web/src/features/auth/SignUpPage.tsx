@@ -16,7 +16,7 @@ export function SignUpPage() {
     setError(null);
     try {
       await signup.mutateAsync({ name, email, password });
-      navigate('/app');
+      navigate('/auth/verify', { state: { email } });
     } catch (err) {
       if (isAxiosError(err) && err.response?.status === 409) {
         setError('That email is already registered.');
