@@ -2,7 +2,7 @@
 
 A Bordio-style work management platform for result-driven teams. Weekly calendar planner, kanban + table views, meetings with ICS invites, time tracking, task chat, and more.
 
-👉 **New here? Read the [User Guide](USER_GUIDE.md)** — how to run it and how to use every feature.
+👉 **New here? Read the [User Guide](doc/USER_GUIDE.md)** — how to run it and how to use every feature.
 
 ## Stack
 - **Web:** React 18 + Vite + TypeScript + Tailwind CSS
@@ -83,4 +83,4 @@ A daily repeatable job (registered by `OtpModule`, **03:00** server time) delete
 unverified users older than 24h (and their empty personal workspace) plus any expired
 OTP rows. It runs automatically while the API is up with Redis available.
 
-See [the prompt playbook](./work-management-platform-claude-code-prompts.md) for the full phase-by-phase build plan.
+See [the prompt playbook](./doc/work-management-platform-claude-code-prompts.md) for the full phase-by-phase build plan.

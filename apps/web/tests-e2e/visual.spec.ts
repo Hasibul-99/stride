@@ -16,7 +16,7 @@ import { test as base, expect, type Page } from '@playwright/test';
  *
  * Snapshots are browser+OS specific. These are generated for chromium; regen
  * intentionally with `pnpm exec playwright test visual.spec.ts --update-snapshots`
- * (see TESTING.md). Only chromium runs this file.
+ * (see doc/TESTING.md). Only chromium runs this file.
  */
 
 const FROZEN = new Date('2026-06-15T12:00:00.000Z'); // a Monday

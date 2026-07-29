@@ -151,4 +151,4 @@ Click any task card to open the right-side drawer:
 | Uploaded file won't open | Check MinIO is up (`docker compose ps`) and the `teamboard` bucket exists (auto-created on start). |
 | Connect Google Calendar disabled | Set `GOOGLE_CLIENT_ID/SECRET` + `GOOGLE_CALLBACK_URL` in `.env`, restart API. |
 
-For deployment to production, see [DEPLOYMENT.md](DEPLOYMENT.md). For architecture/conventions, see [CLAUDE.md](CLAUDE.md).
+For deployment to production, see [DEPLOYMENT.md](DEPLOYMENT.md). For architecture/conventions, see [CLAUDE.md](../CLAUDE.md).

@@ -163,7 +163,7 @@ jobs:
       - name: Run Playwright (shard ${{ matrix.shard }}/3)
         # Playwright's webServer config starts Vite (web) and proxies /api to the API above.
         # @visual is excluded: its baselines are committed for macOS (darwin) only;
-        # generate Linux baselines (see TESTING.md) before enabling them in CI.
+        # generate Linux baselines (see doc/TESTING.md) before enabling them in CI.
         run: pnpm --filter @teamboard/web exec playwright test --shard=${{ matrix.shard }}/3 --grep-invert "@visual"
 
       - name: Upload Playwright report + traces (on failure)
